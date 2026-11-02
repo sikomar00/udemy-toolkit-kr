@@ -1,0 +1,108 @@
+{
+  "manifest_version": 3,
+  "name": "Udemy Toolkit KR",
+  "version": "2.0.0",
+  "description": "Udemy 내 강의 정렬·필터·일괄 보관, 고배속·단축키·PiP·캡처, 이중 자막·문장 반복·문장 수집, 메모, 남은 시간, 보유 강의 표시, 학습 기록",
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://*.udemy.com/*",
+    "https://udemy-captions.s3.amazonaws.com/*",
+    "https://*.udemycdn.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://translate.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "pages/popup.html",
+    "default_title": "Udemy Toolkit",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
+  },
+  "options_page": "pages/options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.udemy.com/*"
+      ],
+      "js": [
+        "lib/common.js",
+        "lib/api.js",
+        "lib/vtt.js",
+        "content/ui.js",
+        "content/library.js",
+        "content/player.js",
+        "content/catalog.js",
+        "content/main.js"
+      ],
+      "css": [
+        "content/style.css"
+      ],
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "https://support.udemy.com/*",
+        "https://business-support.udemy.com/*",
+        "https://blog.udemy.com/*",
+        "https://about.udemy.com/*",
+        "https://business.udemy.com/*",
+        "https://community.udemy.com/*",
+        "https://teach.udemy.com/*",
+        "https://research.udemy.com/*",
+        "https://investors.udemy.com/*"
+      ]
+    }
+  ],
+  "commands": {
+    "toggle-play": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "재생/일시정지 (다른 탭에 있어도)"
+    },
+    "seek-back": {
+      "suggested_key": {
+        "default": "Alt+Shift+Left"
+      },
+      "description": "뒤로 이동"
+    },
+    "seek-forward": {
+      "suggested_key": {
+        "default": "Alt+Shift+Right"
+      },
+      "description": "앞으로 이동"
+    },
+    "screenshot": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "영상 화면 캡처 (보호 영상 대응)"
+    },
+    "speed-up": {
+      "description": "속도 올리기"
+    },
+    "speed-down": {
+      "description": "속도 내리기"
+    },
+    "next-lecture": {
+      "description": "다음 강의"
+    },
+    "quick-note": {
+      "description": "타임스탬프 메모"
+    }
+  }
+}

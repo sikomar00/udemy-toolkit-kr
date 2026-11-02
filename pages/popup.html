@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Udemy Toolkit</title>
+<link rel="stylesheet" href="pages.css">
+</head>
+<body class="popup">
+<div class="pop">
+  <div class="row"><h1>Udemy Toolkit KR</h1><span class="grow"></span><span class="muted" id="ver"></span></div>
+
+  <div class="box" id="today">
+    <div class="row"><b>오늘 학습</b><span class="grow"></span><span id="today-txt" class="muted"></span></div>
+    <div class="meter"><i id="today-bar" style="width:0%"></i></div>
+    <div class="muted" id="streak"></div>
+  </div>
+
+  <div class="box" id="tab-box" hidden>
+    <div class="muted" id="tab-lecture"></div>
+    <div class="speed-row" style="margin-top:6px">
+      <button data-act="speedDown">−</button><b id="tab-speed">1x</b><button data-act="speedUp">+</button>
+      <span class="grow"></span><button data-act="subs">이중 자막</button><button data-act="note">메모</button>
+    </div>
+    <div class="muted" id="tab-remain" style="margin-top:6px"></div>
+  </div>
+
+  <div class="box">
+    <label class="toggle"><span>이중 자막</span><input type="checkbox" data-k="subs.enabled"></label>
+    <label class="toggle"><span>따라 말하기 (문장마다 멈춤)</span><input type="checkbox" data-k="subs.shadowPause"></label>
+    <label class="toggle"><span>검색·강의 목록에서 보유 강의 숨기기</span><input type="checkbox" data-k="catalog.hideOwned"></label>
+    <label class="toggle"><span>영상 위 도구 막대</span><input type="checkbox" data-k="player.toolbar"></label>
+    <label class="toggle"><span>다크 모드 (실험적)</span><input type="checkbox" data-k="ui.darkMode"></label>
+  </div>
+
+  <div class="btns">
+    <button id="open-lib" class="primary">내 학습 열기</button>
+    <button id="open-opt">설정</button>
+    <button id="open-sent">문장 수집함</button>
+    <button id="open-stats">학습 기록</button>
+  </div>
+</div>
+<script src="../lib/common.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
