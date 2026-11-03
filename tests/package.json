@@ -1,0 +1,14 @@
+{
+  "name": "udemy-toolkit-kr-tests",
+  "private": true,
+  "description": "모의 Udemy 페이지·API로 확장을 실제 Chromium에 올려 검증",
+  "scripts": {
+    "test": "node unit.js && node run.js",
+    "test:unit": "node unit.js",
+    "test:e2e": "node run.js",
+    "shots": "node shots.js"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

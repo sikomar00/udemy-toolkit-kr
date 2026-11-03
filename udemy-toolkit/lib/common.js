@@ -102,6 +102,31 @@
     return out;
   };
 
+  // base와 같은 모양·자료형인 값만 받아들인다 (복원 파일·저장소의 잘못된 값이 설정을 망가뜨리지 않게). base에 없는 키는 버린다
+  UXK.conform = function conform(base, over) {
+    const src = isObj(over) ? over : {};
+    const out = {};
+    for (const k of Object.keys(base)) {
+      const b = base[k], v = src[k];
+      if (isObj(b)) out[k] = conform(b, v);
+      else if (typeof v === typeof b && (typeof v !== 'number' || Number.isFinite(v))) out[k] = clone(v);
+      else out[k] = clone(b);
+    }
+    return out;
+  };
+  // 설정 객체를 기본값 모양에 맞추되 개정 번호(_rev)는 유지
+  const settingsFrom = (saved) => {
+    const s = UXK.conform(UXK.DEFAULTS, saved);
+    if (isObj(saved) && Number.isFinite(saved._rev)) s._rev = saved._rev;
+    return s;
+  };
+
+  // CSV 셀: 큰따옴표를 이스케이프하고, 엑셀·시트가 수식으로 실행하는 시작 문자(= + - @ 탭 CR)는 앞에 '를 붙여 막는다
+  UXK.csvCell = (x) => {
+    const s = String(x == null ? '' : x);
+    return '"' + (/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/"/g, '""') + '"';
+  };
+
   // ---------------- 확장 컨텍스트 상태 ----------------
   // 확장이 업데이트·재로드되면 열려 있던 탭의 콘텐츠 스크립트는 고아가 되어 저장소를 쓸 수 없다
   UXK.alive = () => { try { return !!(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id); } catch (e) { return false; } };
@@ -126,7 +151,7 @@
         saved = (v && v[SETTINGS_KEY]) || {};
       }
     } catch (e) { /* 저장소 접근 실패 시 기본값 사용 */ }
-    settingsCache = UXK.merge(UXK.DEFAULTS, saved);
+    settingsCache = settingsFrom(saved);
     return settingsCache;
   };
 
@@ -134,7 +159,7 @@
 
   UXK.saveSettings = async function (partial) {
     const cur = await UXK.getSettings();
-    const next = UXK.merge(cur, partial);
+    const next = settingsFrom(UXK.merge(cur, partial));
     // 개정 번호: 늦게 도착한 이전 변경(onChanged)이 최신 값을 덮지 않게 함
     next._rev = Math.max(Date.now(), (cur._rev || 0) + 1);
     if (hasChrome()) {
@@ -157,7 +182,7 @@
         const curRev = (settingsCache && settingsCache._rev) || 0;
         if (nv._rev != null && nv._rev < curRev) return; // 오래된 변경 무시
         if (nv._rev != null && nv._rev === curRev) return; // 이미 반영한 자기 변경
-        settingsCache = UXK.merge(UXK.DEFAULTS, nv);
+        settingsCache = settingsFrom(nv);
         notify(settingsCache);
       });
     }

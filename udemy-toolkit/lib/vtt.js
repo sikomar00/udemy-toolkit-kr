@@ -23,7 +23,7 @@
   function parse(text) {
     if (!text) return [];
     const src = String(text).replace(/\r\n?/g, '\n').replace(/^﻿/, '');
-    const blocks = src.split(/\n{2,}/);
+    const blocks = src.split(/\n(?:[ \t]*\n)+/); // 공백만 있는 줄도 큐 구분으로 인정
     const cues = [];
     for (const b of blocks) {
       const lines = b.split('\n');
