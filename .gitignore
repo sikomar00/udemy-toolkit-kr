@@ -1,0 +1,9 @@
+node_modules/
+tests/shots/
+tests/*.log
+tests/results.json
+tests/fail-*.png
+*.zip
+.DS_Store
+.env
+.claude/
