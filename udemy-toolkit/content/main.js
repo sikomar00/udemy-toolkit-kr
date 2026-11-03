@@ -44,6 +44,7 @@
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (!msg || !msg.type) return;
       if (msg.type === 'ping') { sendResponse({ ok: true, route: UXK.route() }); return; }
+      if (msg.type === 'diagnose') { sendResponse({ ok: true, ...UXK.diagnose() }); return; }
       if ((msg.type === 'command' || msg.type === 'player') && UXK.route() === 'player' && UXK.playerPage) {
         UXK.playerPage.onMessage(msg).then((r) => sendResponse(r || { ok: false })).catch((e) => sendResponse({ ok: false, error: String(e) }));
         return true;

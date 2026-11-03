@@ -18,7 +18,7 @@
   <div class="box" id="tab-box" hidden>
     <div class="muted" id="tab-lecture"></div>
     <div class="speed-row" style="margin-top:6px">
-      <button data-act="speedDown">−</button><b id="tab-speed">1x</b><button data-act="speedUp">+</button>
+      <button data-act="speedDown" aria-label="속도 낮추기">−</button><b id="tab-speed">1x</b><button data-act="speedUp" aria-label="속도 높이기">+</button>
       <span class="grow"></span><button data-act="subs">이중 자막</button><button data-act="note">메모</button>
     </div>
     <div class="muted" id="tab-remain" style="margin-top:6px"></div>
@@ -37,6 +37,13 @@
     <button id="open-opt">설정</button>
     <button id="open-sent">문장 수집함</button>
     <button id="open-stats">학습 기록</button>
+    <button id="diag" title="Udemy 화면이 바뀌어 기능이 멈췄는지 확인합니다">화면 구조 점검</button>
+  </div>
+
+  <div class="box" id="diag-box" hidden>
+    <pre id="diag-out" aria-live="polite"></pre>
+    <div class="muted" id="diag-hint" aria-live="polite"></div>
+    <button id="diag-copy">결과 복사</button>
   </div>
 </div>
 <script src="../lib/common.js"></script>

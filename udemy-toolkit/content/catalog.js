@@ -9,6 +9,7 @@
   let observer = null;
   let bySlug = new Map();
   let infoBox = null;
+  let shownFor = null; // 정보 상자를 이미 띄운 강의 slug (같은 페이지에서 다시 요청하거나 닫은 상자를 되살리지 않게)
 
   // 알려진 강의 카드 컨테이너만 인정 (일반 li/article/부모 요소로 넓히면 설명문·목록까지 숨길 수 있음)
   const CARD_ROOT = '[data-purpose="course-card-container"], [data-purpose="search-course-card"], [class*="course-card--container"], [class*="course-card-module--container"], [class*="browse-course-card"]';
@@ -60,12 +61,14 @@
 
   // ---------------- 강의 소개 페이지 정보 상자 ----------------
   async function landingInfo() {
-    if (!S.catalog.landingInfo || UXK.route() !== 'landing') { if (infoBox) { infoBox.remove(); infoBox = null; } return; }
+    if (!S.catalog.landingInfo || UXK.route() !== 'landing') { if (infoBox) { infoBox.remove(); infoBox = null; } shownFor = null; return; }
     const slug = (location.pathname.match(/^\/course\/([^/]+)/) || [])[1];
+    if (shownFor === slug) return;
     const owned = slug ? bySlug.get(decodeURIComponent(slug)) : null;
     const idAttr = document.querySelector('[data-clp-course-id]');
     const courseId = owned ? owned.id : idAttr ? +idAttr.getAttribute('data-clp-course-id') : null;
     if (!owned && !courseId) return;
+    shownFor = slug;
     if (!infoBox) {
       infoBox = el('div', { class: 'uxk-info' });
       document.body.appendChild(infoBox);
@@ -80,7 +83,7 @@
     if (!courseId) return;
     try {
       const j = await UXK.api.courseInfo(courseId);
-      if (!infoBox) return;
+      if (!infoBox || shownFor !== slug) return; // 기다리는 동안 닫았거나 다른 강의로 이동함
       const caps = Array.isArray(j.caption_languages) ? j.caption_languages : [];
       const extra = [
         j.created ? `최초 출시 ${esc(String(j.created).slice(0, 10))}` : '',
@@ -91,7 +94,7 @@
       ].filter(Boolean).join(' · ');
       infoBox.querySelector('.uxk-info-extra').innerHTML = extra || '추가 정보 없음';
     } catch (e) {
-      if (infoBox) infoBox.querySelector('.uxk-info-extra').textContent = '추가 정보를 가져오지 못했습니다';
+      if (infoBox && shownFor === slug) infoBox.querySelector('.uxk-info-extra').textContent = '추가 정보를 가져오지 못했습니다';
     }
   }
 
@@ -106,7 +109,7 @@
     landingInfo();
     // 보유 강의 데이터가 오래되었으면 조용히 갱신 (하루 1회 수준)
     if (UXK.lib.isStale(cache, Math.max(24, S.library.autoRefreshHours)) && (await UXK.lib.canAutoRefresh()) && started) {
-      UXK.lib.refresh().then(async () => { await loadOwned(); unmarkAll(); markCards(); landingInfo(); }).catch((e) => UXK.log('catalog refresh', e));
+      UXK.lib.refresh().then(async () => { await loadOwned(); unmarkAll(); markCards(); shownFor = null; landingInfo(); }).catch((e) => UXK.log('catalog refresh', e));
     }
   }
   function onUrl() { if (started) { markSoon(); landingInfo(); } }
@@ -116,8 +119,9 @@
     if (observer) observer.disconnect();
     unmarkAll();
     if (infoBox) { infoBox.remove(); infoBox = null; }
+    shownFor = null;
   }
-  function onSettings(s) { S = s; if (started) { unmarkAll(); markCards(); landingInfo(); } }
+  function onSettings(s) { S = s; if (started) { unmarkAll(); markCards(); shownFor = null; landingInfo(); } }
 
   UXK.catalogPage = { init, destroy, onSettings, onUrl };
 })();
