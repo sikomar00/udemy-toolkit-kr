@@ -2,15 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>Udemy Toolkit</title>
+<title>Toolkit for Udemy</title>
 <link rel="stylesheet" href="pages.css">
 </head>
 <body class="popup">
 <div class="pop">
-  <div class="row"><h1>Udemy Toolkit KR</h1><span class="grow"></span><span class="muted" id="ver"></span></div>
+  <div class="row"><h1>Toolkit for Udemy</h1><span class="grow"></span><span class="muted" id="ver"></span></div>
 
   <div class="box" id="today">
-    <div class="row"><b>오늘 학습</b><span class="grow"></span><span id="today-txt" class="muted"></span></div>
+    <div class="row"><b>Today</b><span class="grow"></span><span id="today-txt" class="muted"></span></div>
     <div class="meter"><i id="today-bar" style="width:0%"></i></div>
     <div class="muted" id="streak"></div>
   </div>
@@ -18,32 +18,31 @@
   <div class="box" id="tab-box" hidden>
     <div class="muted" id="tab-lecture"></div>
     <div class="speed-row" style="margin-top:6px">
-      <button data-act="speedDown" aria-label="속도 낮추기">−</button><b id="tab-speed">1x</b><button data-act="speedUp" aria-label="속도 높이기">+</button>
-      <span class="grow"></span><button data-act="subs">이중 자막</button><button data-act="note">메모</button>
+      <button data-act="speedDown" aria-label="Slower">−</button><b id="tab-speed">1x</b><button data-act="speedUp" aria-label="Faster">+</button>
+      <span class="grow"></span><button data-act="subs">Dual Subs</button><button data-act="note">Note</button>
     </div>
     <div class="muted" id="tab-remain" style="margin-top:6px"></div>
   </div>
 
   <div class="box">
-    <label class="toggle"><span>이중 자막</span><input type="checkbox" data-k="subs.enabled"></label>
-    <label class="toggle"><span>따라 말하기 (문장마다 멈춤)</span><input type="checkbox" data-k="subs.shadowPause"></label>
-    <label class="toggle"><span>검색·강의 목록에서 보유 강의 숨기기</span><input type="checkbox" data-k="catalog.hideOwned"></label>
-    <label class="toggle"><span>영상 위 도구 막대</span><input type="checkbox" data-k="player.toolbar"></label>
-    <label class="toggle"><span>다크 모드 (실험적)</span><input type="checkbox" data-k="ui.darkMode"></label>
+    <label class="toggle"><span>Dual subtitles</span><input type="checkbox" data-k="subs.enabled"></label>
+    <label class="toggle"><span>Hide owned courses in search &amp; lists</span><input type="checkbox" data-k="catalog.hideOwned"></label>
+    <label class="toggle"><span>Toolbar below video</span><input type="checkbox" data-k="player.toolbar"></label>
+    <label class="toggle"><span>Dark mode (experimental)</span><input type="checkbox" data-k="ui.darkMode"></label>
   </div>
 
   <div class="btns">
-    <button id="open-lib" class="primary">내 학습 열기</button>
-    <button id="open-opt">설정</button>
-    <button id="open-sent">문장 수집함</button>
-    <button id="open-stats">학습 기록</button>
-    <button id="diag" title="Udemy 화면이 바뀌어 기능이 멈췄는지 확인합니다">화면 구조 점검</button>
+    <button id="open-lib" class="primary">Open My Learning</button>
+    <button id="open-opt">Settings</button>
+    <button id="open-sent">Saved Sentences</button>
+    <button id="open-stats">Study Stats</button>
+    <button id="diag" title="Checks whether a Udemy page change broke a feature">Check Page Structure</button>
   </div>
 
   <div class="box" id="diag-box" hidden>
     <pre id="diag-out" aria-live="polite"></pre>
     <div class="muted" id="diag-hint" aria-live="polite"></div>
-    <button id="diag-copy">결과 복사</button>
+    <button id="diag-copy">Copy Result</button>
   </div>
 </div>
 <script src="../lib/common.js"></script>

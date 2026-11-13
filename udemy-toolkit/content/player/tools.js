@@ -59,15 +59,15 @@
       if (res && res.ok) blob = await cropDataUrl(res.dataUrl, v.getBoundingClientRect());
     }
     if (!blob) {
-      UXK.ui.toast('캡처 실패: 보호된 영상이거나 권한이 없습니다. 확장 단축키 Alt+Shift+S로 다시 시도하세요.', { kind: 'err', timeout: 7000 });
+      UXK.ui.toast('Capture failed: the video is protected or permission is missing. Try the extension shortcut Alt+Shift+S.', { kind: 'err', timeout: 7000 });
       return;
     }
     const name = `${UXK.safeFile(P.lectureTitle())}_${UXK.fmtClock(v.currentTime).replace(/:/g, '-')}.png`;
     let copied = false;
     try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); copied = true; } catch (e) {}
-    UXK.ui.toast(copied ? '캡처를 클립보드에 복사했습니다' : '캡처 완료', {
+    UXK.ui.toast(copied ? 'Capture copied to the clipboard' : 'Captured', {
       timeout: 6000,
-      actions: [{ label: '파일로 저장', onClick: () => UXK.download(name, blob) }],
+      actions: [{ label: 'Save as file', onClick: () => UXK.download(name, blob) }],
     });
   }
 
@@ -76,29 +76,29 @@
     const wrap = el('div', { class: 'uxk-menu-body' });
     const act = (label, fn) => el('button', { class: 'uxk-btn uxk-menu-item', text: label, onclick: () => { close(); fn(); } });
     let close = () => {};
-    const tabsHint = el('div', { class: 'uxk-hint', text: `현재 속도 ${P.speed.intended}x · 단축키 도움말: ${P.S.hotkeys.help}` });
+    const tabsHint = el('div', { class: 'uxk-hint', text: `Current speed ${P.speed.intended}x · Shortcut help: ${P.S.hotkeys.help}` });
     wrap.append(
       tabsHint,
-      act('내 메모 보기 / 내보내기', P.openNotes),
-      act('섹션별 남은 시간', async () => { await P.computeRemaining(); P.updatePill(); P.showRemainingDetail(); }),
-      act('이 강의 자막 내보내기', () => P.exportLecture().catch((e) => UXK.ui.toast(e.message, { kind: 'err' }))),
-      act('코스 전체 자막 Markdown', P.exportCourseTranscript),
-      act(`넓게 보기 ${P.S.player.theater ? '끄기' : '켜기'}`, () => P.run('theater')),
-      act('단축키 도움말', showHelp),
-      act('설정 열기 (문장 수집함 · 학습 기록)', () => UXK.bg({ type: 'openOptions' })),
+      act('View / export my notes', P.openNotes),
+      act('Time left by section', async () => { await P.computeRemaining(); P.updatePill(); P.showRemainingDetail(); }),
+      act('Export this lecture\'s subtitles', () => P.exportLecture().catch((e) => UXK.ui.toast(e.message, { kind: 'err' }))),
+      act('Whole-course subtitles (Markdown)', P.exportCourseTranscript),
+      act(`Turn ${P.S.player.theater ? 'off' : 'on'} wide view`, () => P.run('theater')),
+      act('Shortcut help', showHelp),
+      act('Open settings (saved sentences · study stats)', () => UXK.bg({ type: 'openOptions' })),
     );
-    UXK.ui.modal({ title: 'Udemy Toolkit', body: wrap, width: 380, buttons: [{ label: '닫기', value: true }], onOpen: (c, finish) => { close = () => finish(true); } });
+    UXK.ui.modal({ title: 'Toolkit for Udemy', body: wrap, width: 380, buttons: [{ label: 'Close', value: true }], onOpen: (c, finish) => { close = () => finish(true); } });
   }
   const ACTION_LABELS = UXK.ACTION_LABELS;
   function showHelp() {
     const rows = Object.entries(P.S.hotkeys).filter(([, v]) => v).map(([k, v]) => `<tr><td><kbd>${esc(v)}</kbd></td><td>${esc(ACTION_LABELS[k] || k)}</td></tr>`).join('');
     UXK.ui.modal({
-      title: '단축키',
+      title: 'Hotkeys',
       width: 520,
       body: `<div class="uxk-scroll"><table class="uxk-table">${rows}</table></div>
-        <div class="uxk-hint">Udemy 기본 단축키(그대로 동작): Space 재생/정지 · ←/→ 5초 · Shift+←/→ 속도 · ↑/↓ 볼륨 · F 전체화면 · M 음소거 · B Udemy 노트 · ? 도움말</div>
-        <div class="uxk-hint">탭 밖에서도 쓰는 확장 단축키는 chrome://extensions/shortcuts 에서 바꿀 수 있습니다. 키 변경은 설정 페이지에서 합니다.</div>`,
-      buttons: [{ label: '닫기', value: true }],
+        <div class="uxk-hint">Udemy's own shortcuts (still work): Space play/pause · ←/→ 5 s · Shift+←/→ speed · ↑/↓ volume · F fullscreen · M mute · B Udemy note · ? help</div>
+        <div class="uxk-hint">Global extension shortcuts that work outside the tab can be changed at chrome://extensions/shortcuts. Change the other keys on the settings page.</div>`,
+      buttons: [{ label: 'Close', value: true }],
     });
   }
 
@@ -118,7 +118,7 @@
       const add = this.acc;
       this.acc = 0;
       if (!add) return;
-      try { await this.save(add); } catch (e) { this.acc += add; UXK.log('학습 시간 저장 실패', e); } // 저장에 실패해도 시간을 잃지 않고 다음에 다시 시도
+      try { await this.save(add); } catch (e) { this.acc += add; UXK.log('failed to save watch time', e); } // 저장에 실패해도 시간을 잃지 않고 다음에 다시 시도
     },
     async save(add) {
       const day = UXK.today();
@@ -135,7 +135,7 @@
         while (keys.length > 400) delete st.days[keys.shift()];
         return st;
       }, { days: {} });
-      if (reached) UXK.ui.toast(`오늘 학습 목표 ${P.S.stats.dailyGoalMin}분 달성`, { timeout: 6000 });
+      if (reached) UXK.ui.toast(`Daily goal of ${P.S.stats.dailyGoalMin} min reached`, { timeout: 6000 });
     },
   };
 

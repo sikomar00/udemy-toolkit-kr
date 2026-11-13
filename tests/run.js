@@ -62,7 +62,7 @@ async function libraryTests(page, mock) {
   check('보관한 카드 흐리게 처리', hidden);
   const menuClosed = await page.$eval('.enrolled-course-card--container--WJYo9:has(a[href*="course_id=102"]) .menu', (n) => n.hidden);
   check('보관 후 메뉴 닫힘 (Escape 전달)', menuClosed);
-  await page.click('.uxk-toast-btn:text("되돌리기")');
+  await page.click('.uxk-toast-btn:text("Undo")');
   await sleep(800);
   check('되돌리기 → DELETE 요청', mock.log.archiveDeletes.includes(102));
 
@@ -74,7 +74,7 @@ async function libraryTests(page, mock) {
   const seg = await page.$$eval('[data-scope]', (n) => n.map((x) => x.textContent));
   check('보관/미보관 구분 개수', seg[0].includes('250') && seg[1].includes('30'), seg.join(' / '));
   const stats = await page.$eval('.uxk-lib-stats', (n) => n.textContent);
-  check('요약 통계 표시', /250/.test(stats) && /미시작/.test(stats), stats.slice(0, 120));
+  check('요약 통계 표시', /250/.test(stats) && /not started/.test(stats), stats.slice(0, 120));
 
   const ratingsOf = () => page.$$eval('.uxk-lib tbody tr', (rows) => rows.map((r) => parseFloat(r.children[2].textContent)));
   await page.fill('input[data-f="minr"]', '4.5');
@@ -138,7 +138,7 @@ async function libraryTests(page, mock) {
   await page.click('[data-act="archive"]');
   await page.waitForSelector('.uxk-modal');
   await page.click('.uxk-modal .uxk-btn-danger');
-  await waitToast(page, /보관 완료 2개/, 10000);
+  await waitToast(page, /Archive done: 2/, 10000);
   check('일괄 보관 2개', mock.log.archivePosts.length - postsBefore === 2, ids.join(','));
   const seg2 = await page.$$eval('[data-scope]', (n) => n.map((x) => x.textContent));
   check('일괄 보관 후 개수 갱신', seg2[0].includes('248') && seg2[1].includes('32'), seg2.join(' / '));
@@ -147,13 +147,13 @@ async function libraryTests(page, mock) {
   await page.locator('.uxk-lib tbody tr .uxk-sel').nth(0).check();
   await page.click('[data-act="unarchive"]');
   await page.click('.uxk-modal .uxk-btn-primary');
-  await waitToast(page, /보관 해제 완료 1개/, 10000);
+  await waitToast(page, /Unarchive done: 1/, 10000);
   check('보관 해제 (DELETE)', mock.log.archiveDeletes.length >= 2);
   await page.click('[data-scope="active"]');
 
   // 내보내기
   const csv = await readDownload(page, () => page.click('[data-act="csv"]'));
-  check('CSV 내보내기 (BOM + 헤더 + 행)', csv.text.charCodeAt(0) === 0xfeff && csv.text.includes('"제목"') && csv.text.split('\r\n').length > 200, csv.name);
+  check('CSV 내보내기 (BOM + 헤더 + 행)', csv.text.charCodeAt(0) === 0xfeff && csv.text.includes('"Title"') && csv.text.split('\r\n').length > 200, csv.name);
   const md = await readDownload(page, () => page.click('[data-act="md"]'));
   check('Markdown 체크리스트', md.text.includes('- [ ] [') && md.text.includes('course_id='), md.name);
   const js = await readDownload(page, () => page.click('[data-act="json"]'));
@@ -168,13 +168,13 @@ async function playerTests(page, mock, sw) {
   await sleep(500);
   const rate = () => page.evaluate(() => document.querySelector('video').playbackRate);
   const label = () => page.$eval('.uxk-tb-speed', (n) => n.textContent);
-  check('플레이어: 도구 막대가 비디오 컨테이너 안에 삽입', await page.$eval('.uxk-layer', (n) => n.parentElement.matches('[data-purpose="video-player"]')));
+  check('플레이어: 겹침 층(자막·알림)이 비디오 컨테이너 안에 삽입', await page.$eval('.uxk-layer', (n) => n.parentElement.matches('[data-purpose="video-player"]')));
   const diag = await sw.evaluate(async () => {
     const [t] = await chrome.tabs.query({ url: 'https://www.udemy.com/course/*/learn/*' });
     return chrome.tabs.sendMessage(t.id, { type: 'diagnose' });
   });
   const found = Object.fromEntries(diag.checks.map((c) => [c.name, c.count]));
-  check('화면 구조 점검: 모의 플레이어에서 영상·영상 틀·속도 메뉴를 찾음', diag.ok && diag.route === 'player' && found['영상'] === 1 && found['영상 틀'] >= 1 && found['Udemy 속도 메뉴'] >= 1, JSON.stringify(found));
+  check('화면 구조 점검: 모의 플레이어에서 영상·영상 틀·속도 메뉴를 찾음', diag.ok && diag.route === 'player' && found['Video'] === 1 && found['Video frame'] >= 1 && found['Udemy speed menu'] >= 1, JSON.stringify(found));
   await page.mouse.click(1200, 800);
   await page.keyboard.press('d');
   check('D → 1.25배', (await rate()) === 1.25, String(await rate()));
@@ -228,47 +228,15 @@ async function playerTests(page, mock, sw) {
   check('Q → 현재 문장 처음으로', t >= 4.5 && t < 5.2, t.toFixed(2));
   await page.evaluate(() => document.querySelector('video').pause());
   await page.keyboard.press('k');
-  await page.waitForFunction(() => /문장 저장됨/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Sentence saved/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
   check('K → 문장 수집함 저장', true);
   await page.keyboard.press('y');
-  await page.waitForFunction(() => /문장 복사됨|복사 실패/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
+  await page.waitForFunction(() => /Sentence copied|Copy failed/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
   check('Y → 문장 복사 시도', true, await page.$eval('.uxk-indicator', (n) => n.textContent));
-  await page.click('.uxk-toolbar button:text("대본")', { force: true });
-  await page.waitForFunction(() => /대본 복사됨|복사 실패/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
+  await page.click('.uxk-toolbar button:text("Copy Transcript")', { force: true });
+  await page.waitForFunction(() => /Transcript copied|Copy failed/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
   const clip = await page.evaluate(() => navigator.clipboard.readText());
-  check('대본 버튼 → 강의 전체 자막이 클립보드에 복사', /^대본 복사됨 \(English \[Auto\] · 4문장\)$/.test(await page.$eval('.uxk-indicator', (n) => n.textContent)) && clip === 'Hello world Second sentence here Third sentence & more Long cue', JSON.stringify(clip));
-
-  // 따라 말하기
-  await page.keyboard.press('w');
-  await page.evaluate(() => { const v = document.querySelector('video'); v.currentTime = 0.3; v.play().catch(() => {}); });
-  await page.waitForFunction(() => document.querySelector('video').paused, null, { timeout: 8000 });
-  const tp = await page.evaluate(() => document.querySelector('video').currentTime);
-  check('W 따라 말하기 → 문장 끝에서 자동 정지', tp > 1.7 && tp < 2.1, tp.toFixed(2));
-  await page.keyboard.press('w');
-  if (process.env.HANG_DEBUG) {
-    const client = await page.context().newCDPSession(page);
-    await client.send('Debugger.enable');
-    client.on('Debugger.paused', (e) => {
-      console.log('PAUSED', e.reason);
-      e.callFrames.slice(0, 15).forEach((f) => console.log('  at', f.functionName || '(anon)', f.url.split('/').slice(-2).join('/'), f.location.lineNumber + 1, ':', f.location.columnNumber));
-      client.send('Debugger.resume').catch(() => {});
-    });
-    const ok = await Promise.race([page.evaluate(() => 1).then(() => true), sleep(4000).then(() => false)]);
-    console.log('HANG_DEBUG evaluate ok?', ok);
-    if (!ok) { await client.send('Debugger.pause'); await sleep(3000); }
-  }
-
-  // A-B 반복
-  await page.evaluate(() => { const v = document.querySelector('video'); v.currentTime = 10; });
-  await page.keyboard.press('a');
-  await page.evaluate(() => { const v = document.querySelector('video'); v.currentTime = 11; });
-  await page.keyboard.press('a');
-  await page.evaluate(() => { document.querySelector('video').play().catch(() => {}); });
-  await sleep(1500);
-  const tab = await page.evaluate(() => document.querySelector('video').currentTime);
-  check('A-B 구간 반복 (10~11초 안에 머묾)', tab >= 9.9 && tab <= 11.3, tab.toFixed(2));
-  await page.keyboard.press('a');
-  await page.evaluate(() => document.querySelector('video').pause());
+  check('대본 버튼 → 강의 전체 자막이 클립보드에 복사', /^Transcript copied \(English \[Auto\] · 4 sentences\)$/.test(await page.$eval('.uxk-indicator', (n) => n.textContent)) && clip === 'Hello world Second sentence here Third sentence & more Long cue', JSON.stringify(clip));
 
   // 메모
   await page.keyboard.press('Alt+n');
@@ -276,7 +244,7 @@ async function playerTests(page, mock, sw) {
   await page.fill('.uxk-modal textarea', '중요: 리스트 컴프리헨션 d s r 키 입력 테스트');
   const rateBeforeNote = await rate();
   await page.keyboard.press('Control+Enter');
-  await waitToast(page, /메모 저장됨/);
+  await waitToast(page, /Note saved/);
   check('Alt+N 메모 저장 (Ctrl+Enter)', true);
   check('메모 입력 중 키가 단축키로 새지 않음', (await rate()) === rateBeforeNote);
 
@@ -285,12 +253,12 @@ async function playerTests(page, mock, sw) {
   check('섹션 완료 버튼 2개 섹션에 삽입', (await page.$$('.uxk-sec-tools')).length === 2);
   await page.waitForSelector('.uxk-pill', { timeout: 8000 });
   const pill = await page.$eval('.uxk-pill', (n) => n.textContent);
-  check('남은 시간 표시 (25분, 1.5x 환산, 1/3강)', /남은 25분/.test(pill) && /1\.5x → 17분/.test(pill) && /완료 1\/3강/.test(pill), pill);
+  check('남은 시간 표시 (25분, 1.5x 환산, 1/3강)', /25m left/.test(pill) && /1\.5x → 17m/.test(pill) && /1\/3 done/.test(pill), pill);
   const secLabels = await page.$$eval('.uxk-sec-remain', (n) => n.map((x) => x.textContent));
-  check('섹션 제목 옆 남은 시간', secLabels[0] === '남은 10분' && secLabels[1] === '남은 15분', secLabels.join(','));
-  await page.click('[data-purpose="section-panel-0"] .uxk-sec-btn:text("섹션 전체 완료")');
+  check('섹션 제목 옆 남은 시간', secLabels[0] === '10m left' && secLabels[1] === '15m left', secLabels.join(','));
+  await page.click('[data-purpose="section-panel-0"] .uxk-sec-btn:text("Mark section complete")');
   await page.click('.uxk-modal .uxk-btn-primary');
-  await waitToast(page, /완료로 표시했습니다/, 8000);
+  await waitToast(page, /as complete/, 8000);
   const calls = await page.evaluate(() => window.__completeCalls);
   check('섹션 전체 완료 → 미완료 강의만 체크박스 클릭', calls.length === 1 && calls[0][0] === '1001' && calls[0][1] === true, JSON.stringify(calls));
   await page.click('.uxk-pill');
@@ -300,8 +268,8 @@ async function playerTests(page, mock, sw) {
 
   // 캡처
   await page.keyboard.press('Alt+s');
-  await waitToast(page, /캡처/, 8000);
-  check('Alt+S 캡처 (캔버스)', /캡처를 클립보드에|캡처 완료/.test(await toastText(page)), await toastText(page));
+  await waitToast(page, /Captur/, 8000);
+  check('Alt+S 캡처 (캔버스)', /Capture copied to the clipboard|Captured/.test(await toastText(page)), await toastText(page));
 
   // 도움말
   await page.keyboard.press('h');
@@ -312,15 +280,15 @@ async function playerTests(page, mock, sw) {
   // 이 강의 자막 내보내기 (자막 메뉴)
   await page.click('.uxk-tb-subs', { force: true });
   await page.waitForSelector('.uxk-modal select');
-  await page.click('.uxk-modal button:text("이 강의 자막 내보내기")');
-  await page.waitForSelector('.uxk-modal button:text("SRT 이중")');
-  const srt = await readDownload(page, () => page.click('.uxk-modal button:text("SRT 이중")'));
+  await page.click('.uxk-modal button:text("Export this lecture")');
+  await page.waitForSelector('.uxk-modal button:text("SRT (dual)")');
+  const srt = await readDownload(page, () => page.click('.uxk-modal button:text("SRT (dual)")'));
   check('이 강의 SRT 이중 자막 (+한글 파일명)', srt.text.includes('00:00:00,000 --> 00:00:02,000') && srt.text.includes('안녕 세상') && srt.name === 'Python 부트캠프 테스트 - Lecture 1001.bilingual.srt', srt.name);
   await page.keyboard.press('Escape');
   await sleep(200);
   // 코스 전체 자막
   check('Escape는 맨 위 모달만 닫음', (await page.$$('.uxk-modal')).length === 1);
-  await page.click('.uxk-modal button:text("코스 전체 자막 (Markdown)")');
+  await page.click('.uxk-modal button:text("Whole-course subtitles (Markdown)")');
   await page.locator('.uxk-modal-back').last().locator('.uxk-btn-primary').click();
   const courseMd = await new Promise((resolve, reject) => {
     page.waitForEvent('download', { timeout: 20000 }).then(async (dl) => resolve({ name: dl.suggestedFilename(), text: fs.readFileSync(await dl.path(), 'utf8') })).catch(reject);
@@ -330,12 +298,12 @@ async function playerTests(page, mock, sw) {
 
   // 메모 드로어
   await page.click('.uxk-toolbar button:text("⋯")', { force: true });
-  await page.click('.uxk-modal button:text("내 메모 보기 / 내보내기")');
+  await page.click('.uxk-modal button:text("View / export my notes")');
   await page.waitForSelector('.uxk-drawer.uxk-open .uxk-note');
   check('메모 드로어에 메모 표시', (await page.$eval('.uxk-drawer .uxk-note-x', (n) => n.textContent)).includes('리스트 컴프리헨션'));
-  const notesMd = await readDownload(page, () => page.click('.uxk-drawer button:text(".md 저장")'));
+  const notesMd = await readDownload(page, () => page.click('.uxk-drawer button:text("Save .md")'));
   check('메모 Markdown (타임스탬프 링크)', /\[\d\d:\d\d\]\(https:\/\/www\.udemy\.com\/course\/test-course\/learn\/lecture\/1001\?uxk_t=\d+\)/.test(notesMd.text), notesMd.text.split('\n').find((l) => l.startsWith('- ')));
-  await page.click('.uxk-drawer button:text("닫기")');
+  await page.click('.uxk-drawer button:text("Close")');
 
   // 다음 강의 (SPA) + Udemy 속도 초기화 → 재적용 + 자막 재로딩
   await page.mouse.click(1200, 800);
@@ -348,27 +316,17 @@ async function playerTests(page, mock, sw) {
   const newReqs = mock.log.requests.slice(reqBefore);
   check('강의 전환 후 새 강의 자막 요청', newReqs.some((r) => r.includes('/lectures/1002/')), newReqs.filter((r) => r.includes('lectures')).join(' '));
 
-  // 팝업/설정에서 따라 말하기만 켠 경우 (이중 자막 OFF) — 새 페이지에서 자막이 조용히 로드되어야 함
+  // 이중 자막을 끈 새 페이지: 영상 위 자막 상자는 숨기고 Udemy 기본 자막은 그대로 둔다
   await page.context().serviceWorkers()[0].evaluate(async () => {
     const cur = (await chrome.storage.sync.get('uxk_settings')).uxk_settings || {};
-    cur.subs = { ...(cur.subs || {}), enabled: false, shadowPause: true };
+    cur.subs = { ...(cur.subs || {}), enabled: false };
     cur._rev = Date.now() + 1000;
     await chrome.storage.sync.set({ uxk_settings: cur });
   });
   await page.goto('https://www.udemy.com/course/test-course/learn/lecture/1003');
   await page.waitForFunction(() => document.querySelector('video') && document.querySelector('video').readyState >= 2, null, { timeout: 10000 });
   await sleep(1500);
-  await page.evaluate(() => { const v = document.querySelector('video'); v.currentTime = 0.3; v.play().catch(() => {}); });
-  const shadowOnly = await page.waitForFunction(() => document.querySelector('video').paused, null, { timeout: 8000 }).then(() => true).catch(() => false);
-  const tso = await page.evaluate(() => document.querySelector('video').currentTime);
-  check('설정에서 따라 말하기만 켜도 동작 (이중 자막 OFF)', shadowOnly && tso > 1.7 && tso < 2.1, tso.toFixed(2));
   check('이중 자막 OFF면 자막 상자 숨김 + Udemy 기본 자막 유지', await page.evaluate(() => getComputedStyle(document.querySelector('.uxk-subs')).display === 'none' && getComputedStyle(document.querySelector('[class*="captions-display--captions-container"]')).display !== 'none'));
-  await page.context().serviceWorkers()[0].evaluate(async () => {
-    const cur = (await chrome.storage.sync.get('uxk_settings')).uxk_settings || {};
-    cur.subs = { ...(cur.subs || {}), shadowPause: false };
-    cur._rev = Date.now() + 2000;
-    await chrome.storage.sync.set({ uxk_settings: cur });
-  });
   await sleep(300);
 
   // 딥링크 ?uxk_t=
@@ -380,8 +338,8 @@ async function playerTests(page, mock, sw) {
   check('속도 코스별 기억 (새로고침 후 1.5)', (await rate()) === 1.5, String(await rate()));
   // 대본 버튼: 자막이 아직 로드되지 않은 새 페이지에서도 원문만 받아 복사한다 (보조 자막 요청이 없어야 함)
   const fetches0 = mock.log.captionFetches || 0;
-  await page.click('.uxk-toolbar button:text("대본")', { force: true });
-  await page.waitForFunction(() => /대본 복사됨|복사 실패/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 8000 });
+  await page.click('.uxk-toolbar button:text("Copy Transcript")', { force: true });
+  await page.waitForFunction(() => /Transcript copied|Copy failed/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 8000 });
   const cold = await page.evaluate(() => navigator.clipboard.readText());
   const fetched = (mock.log.captionFetches || 0) - fetches0;
   check('대본 버튼 (자막 미로드) → 원문만 받아 복사, 보조 자막 요청 없음', cold === 'Hello world Second sentence here Third sentence & more Long cue' && fetched === 1, `자막 요청 ${fetched}회 ${JSON.stringify(cold)}`);
@@ -393,7 +351,7 @@ async function catalogTests(page, sw) {
   await page.waitForSelector('#card-owned .uxk-owned', { timeout: 8000 });
   check('검색: 보유 강의 배지', true, await page.$eval('#card-owned .uxk-owned', (n) => n.textContent));
   check('검색: 미보유 강의엔 배지 없음', !(await page.$('#card-new .uxk-owned')));
-  check('검색: 보관된 보유 강의 표시', (await page.$eval('#card-archived .uxk-owned', (n) => n.textContent)).includes('보관됨'));
+  check('검색: 보관된 보유 강의 표시', (await page.$eval('#card-archived .uxk-owned', (n) => n.textContent)).includes('archived'));
   await sw.evaluate(async () => {
     const cur = (await chrome.storage.sync.get('uxk_settings')).uxk_settings || {};
     cur.catalog = { ...(cur.catalog || {}), hideOwned: true };
@@ -405,17 +363,17 @@ async function catalogTests(page, sw) {
   check('카드가 아닌 설명문 속 링크는 숨기지 않음 (배지만)', await page.evaluate(() => getComputedStyle(document.getElementById('desc-li')).display !== 'none' && !!document.querySelector('#desc-li .uxk-owned')));
   check('헤더 링크는 숨기지 않음', await page.evaluate(() => getComputedStyle(document.querySelector('header .my-learning-dropdown')).display !== 'none'));
   await page.goto('https://www.udemy.com/course/slug-101/');
-  await page.waitForFunction(() => /최초 출시 2019-02-19/.test((document.querySelector('.uxk-info') || {}).textContent || ''), null, { timeout: 8000 });
+  await page.waitForFunction(() => /First published 2019-02-19/.test((document.querySelector('.uxk-info') || {}).textContent || ''), null, { timeout: 8000 });
   const info = await page.$eval('.uxk-info', (n) => n.textContent);
-  check('강의 소개: 보유 여부 + 최초 출시일 + 자막 언어', info.includes('이미 보유한 강의') && info.includes('Korean [Auto]'), info.slice(0, 140));
+  check('강의 소개: 보유 여부 + 최초 출시일 + 자막 언어', info.includes('You own this course') && info.includes('Korean [Auto]'), info.slice(0, 140));
 }
 
 async function optionsTests(context, sw, extId) {
   const opt = await context.newPage();
   await opt.goto(`chrome-extension://${extId}/pages/options.html`);
   await opt.waitForSelector('#hk-body tr');
-  check('설정: 단축키 표 19행', (await opt.$$('#hk-body tr')).length === 19);
-  await opt.waitForFunction(() => /총 1개/.test(document.getElementById('sent-count').textContent), null, { timeout: 5000 });
+  check('설정: 단축키 표 17행 (따라 말하기·A-B 반복 단축키 삭제 후)', (await opt.$$('#hk-body tr')).length === 17);
+  await opt.waitForFunction(() => /1 total/.test(document.getElementById('sent-count').textContent), null, { timeout: 5000 });
   check('설정: 문장 수집함 1개', true);
   const sentRow = await opt.$eval('#sent-body tr', (n) => n.textContent);
   check('문장에 원문+번역+출처', sentRow.includes('Third sentence & more') && sentRow.includes('세 번째 문장') && sentRow.includes('Python 부트캠프 테스트'), sentRow.replace(/\s+/g, ' ').slice(0, 120));
@@ -442,7 +400,7 @@ async function optionsTests(context, sw, extId) {
   await opt.click('#hk-reset');
   await sleep(200);
   const stats = await opt.$eval('#kpis', (n) => n.textContent);
-  check('학습 기록 KPI 표시', stats.includes('오늘') && stats.includes('연속'), stats);
+  check('학습 기록 KPI 표시', stats.includes('Today') && stats.includes('Goal streak'), stats);
   const backup = await readDownload(opt, () => opt.click('#backup'));
   const bj = JSON.parse(backup.text);
   check('백업 JSON (메모·문장·메타 포함)', bj.app === 'udemy-toolkit-kr' && bj.data.sentences.length === 1 && Object.keys(bj.data.notes).length === 1 && bj.data.meta);
@@ -451,7 +409,7 @@ async function optionsTests(context, sw, extId) {
   await pop.waitForFunction(() => document.getElementById('today-txt').textContent.length > 0);
   check('팝업 로드', true, await pop.$eval('#today-txt', (n) => n.textContent));
   await pop.click('#diag');
-  check('팝업: Udemy 탭이 아니면 점검 안내', (await pop.$eval('#diag-out', (n) => n.textContent)).includes('Udemy 탭'));
+  check('팝업: Udemy 탭이 아니면 점검 안내', (await pop.$eval('#diag-out', (n) => n.textContent)).includes('Udemy tab'));
   const errs = [];
   opt.on('pageerror', (e) => errs.push(e.message));
   await opt.reload();
@@ -460,6 +418,154 @@ async function optionsTests(context, sw, extId) {
   await opt.close();
   await pop.close();
 }
+
+// 영상 아래 도구 막대(항상 보임, 한 번 클릭으로 켜기/끄기)와 Udemy 기본 자막 숨기기(클래스 이름이 바뀐 화면 포함)
+async function toolbarTests(page, mock, sw) {
+  const lecture = 'https://www.udemy.com/course/test-course/learn/lecture/1001';
+  const setSubs = (on) => sw.evaluate(async (flag) => {
+    const cur = (await chrome.storage.sync.get('uxk_settings')).uxk_settings || {};
+    cur.subs = { ...(cur.subs || {}), enabled: flag };
+    cur._rev = Math.max(Date.now(), (cur._rev || 0) + 1); // 실제 저장(UXK.saveSettings)처럼 개정 번호를 최소한만 올린다 (너무 크면 뒤 테스트의 변경이 낡은 것으로 무시됨)
+    await chrome.storage.sync.set({ uxk_settings: cur });
+  }, on);
+  const pressedOf = (label) => page.evaluate((l) => [...document.querySelectorAll('.uxk-toolbar button')].find((b) => b.textContent === l).getAttribute('aria-pressed'), label);
+  const waitPressed = (label, value) => page.waitForFunction(([l, v]) => [...document.querySelectorAll('.uxk-toolbar button')].find((b) => b.textContent === l).getAttribute('aria-pressed') === v, [label, value], { timeout: 6000 });
+  const open = async () => {
+    await page.goto(lecture);
+    await page.waitForSelector('.uxk-toolbar', { timeout: 15000, state: 'attached' });
+    await page.evaluate(() => { const v = document.querySelector('video'); v.pause(); v.currentTime = 1; });
+  };
+  const barGeometry = () => page.evaluate(() => {
+    const bar = document.querySelector('.uxk-toolbar'), host = document.querySelector('[data-purpose="video-player"]');
+    const b = bar.getBoundingClientRect(), h = host.getBoundingClientRect(), cs = getComputedStyle(bar);
+    return { mode: bar.dataset.mode, gap: Math.round(b.top - h.bottom), height: Math.round(b.height), inLayer: !!bar.closest('.uxk-layer'), display: cs.display, opacity: cs.opacity, inViewport: b.top >= 0 && b.bottom <= window.innerHeight + 1 };
+  });
+
+  await setSubs(false);
+  await open();
+  await page.mouse.move(5, 5); // 영상 밖: 마우스를 올리지 않은 상태
+  const g = await barGeometry();
+  check('도구 막대는 영상 위가 아니라 영상 바로 아래에 붙고 항상 보임', g.mode === 'below' && !g.inLayer && g.gap >= -2 && g.gap <= 4 && g.height >= 24 && g.display !== 'none' && g.opacity === '1' && g.inViewport, JSON.stringify(g));
+  const labels = await page.$$eval('.uxk-toolbar button', (bs) => bs.map((b) => b.textContent));
+  check('도구 막대: 이중 자막·문장 반복 등이 있고 따라 말하기·A-B 반복은 없음', ['Dual Subs', 'Loop', 'Copy Transcript', 'Note', 'Capture', 'PiP', 'Wide', 'Subtitles'].every((l) => labels.includes(l)) && !labels.some((l) => /따라 말하기|A-B/.test(l)), labels.join('|'));
+
+  // 기본 자막의 클래스 이름이 알려진 것인 화면: 이중 자막을 켜면 기본 자막이 숨겨진다
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await waitPressed('Dual Subs', 'true');
+  await page.waitForFunction(() => (document.querySelector('.uxk-sub1') || {}).textContent === 'Hello world', null, { timeout: 10000 });
+  const known = await page.evaluate(() => ({ subs: getComputedStyle(document.querySelector('.uxk-subs')).display, nativeHidden: getComputedStyle(document.querySelector('[class*="captions-display--captions-container"]')).display === 'none' }));
+  check('이중 자막 버튼 한 번 → 켜짐 표시, Udemy 기본 자막은 숨기고 우리 자막을 보임', (await pressedOf('Dual Subs')) === 'true' && known.subs !== 'none' && known.nativeHidden, JSON.stringify(known));
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await waitPressed('Dual Subs', 'false');
+
+  await page.click('.uxk-toolbar button:text("Loop")');
+  await waitPressed('Loop', 'true');
+  await page.click('.uxk-toolbar button:text("Loop")');
+  await waitPressed('Loop', 'false');
+  check('문장 반복도 한 번 클릭으로 켜고 다시 한 번으로 끔 (켜짐 표시)', true);
+
+  // 기본 자막의 클래스 이름이 바뀌어 알 수 없는 화면: 영상 안 아래쪽의 글자(다른 언어여도)를 모양으로 찾아 숨기고, 단추 등은 건드리지 않는다
+  mock.setCc('unknown');
+  await setSubs(false);
+  await open();
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await page.waitForFunction(() => (document.querySelector('.uxk-sub1') || {}).textContent === 'Hello world', null, { timeout: 10000 });
+  await page.waitForSelector('[data-uxk-native-cc]', { state: 'attached', timeout: 8000 });
+  const found = await page.evaluate(() => {
+    const n = document.querySelector('[data-uxk-native-cc]');
+    return { cls: n.className, text: n.textContent, hidden: getComputedStyle(n).display === 'none', marked: document.querySelectorAll('[data-uxk-native-cc]').length, rateButton: getComputedStyle(document.querySelector('[data-purpose="playback-rate-button"]')).display !== 'none', video: getComputedStyle(document.querySelector('video')).display !== 'none', overlay: getComputedStyle(document.querySelector('.uxk-subs')).display !== 'none' };
+  });
+  check('기본 자막을 클래스 이름 없이 모양으로 찾아 숨김 (다른 언어, 영상·단추는 그대로)', found.cls === 'cc-wrap-x1' && /Bonjour/.test(found.text) && found.hidden && found.marked === 1 && found.rateButton && found.video && found.overlay, JSON.stringify(found));
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await page.waitForFunction(() => !document.querySelector('[data-uxk-native-cc]') && getComputedStyle(document.querySelector('.cc-wrap-x1')).display !== 'none', null, { timeout: 6000 });
+  check('이중 자막을 끄면 숨겼던 기본 자막이 돌아옴', true);
+  mock.setCc('');
+
+  // 영상 바로 아래에 기본 자막 띠(다른 언어 글자, 클래스 이름 모름)가 있는 실제 Udemy 같은 화면: 띠 자리를 원문+번역 박스로 대체하고, 막대는 그 아래(영상 · 자막 · 막대 순서)
+  mock.setCc('band');
+  await setSubs(false);
+  await open();
+  await page.waitForFunction(() => { const b = document.querySelector('.uxk-toolbar'), s = document.getElementById('strip'); return b && s && b.dataset.mode === 'below' && b.getBoundingClientRect().top >= s.getBoundingClientRect().bottom - 2; }, null, { timeout: 8000 });
+  check('기본 자막 띠가 영상 아래에 있으면 도구 막대는 그 띠 아래에 붙음 (영상 · 자막 · 막대)', true);
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await page.waitForSelector('.uxk-capbox', { timeout: 10000 });
+  await page.waitForFunction(() => document.querySelector('.uxk-cap2') && document.querySelector('.uxk-cap2').textContent === '안녕 세상', null, { timeout: 10000 });
+  const boxed = await page.evaluate(() => {
+    const box = document.querySelector('.uxk-capbox'), strip = document.getElementById('strip'), host = document.querySelector('[data-purpose="video-player"]'), bar = document.querySelector('.uxk-toolbar');
+    const br = box.getBoundingClientRect(), hr = host.getBoundingClientRect(), tr = bar.getBoundingClientRect();
+    return { cap1: document.querySelector('.uxk-cap1').textContent, nextIsStrip: box.nextElementSibling === strip, stripHidden: getComputedStyle(strip).display === 'none', overlay: getComputedStyle(document.querySelector('.uxk-subs')).display, listUntouched: !document.querySelector('#list [data-uxk-native-cc]'), boxUnderVideo: Math.abs(br.top - hr.bottom) <= 4, barUnderBox: tr.top >= br.bottom - 2 && tr.top - br.bottom <= 6, mode: bar.dataset.mode };
+  });
+  check('이중 자막: 영상 아래 기본 자막 띠(다른 언어)를 찾아 그 자리를 원문+번역 박스로 대체, 막대는 박스 아래 (대본 목록은 그대로)', boxed.cap1 === 'Hello world' && boxed.nextIsStrip && boxed.stripHidden && boxed.overlay === 'none' && boxed.listUntouched && boxed.boxUnderVideo && boxed.barUnderBox && boxed.mode === 'below', JSON.stringify(boxed));
+
+  // 전체화면(영상 틀만): 띠가 전체화면 밖이므로 박스를 걷고 영상 위 자막을 씀. 나오면 박스가 돌아옴
+  await page.evaluate(() => document.querySelector('.uxk-layer').parentElement.requestFullscreen());
+  await page.waitForFunction(() => !!document.fullscreenElement && !document.querySelector('.uxk-capbox') && !document.querySelector('.uxk-toolbar'), null, { timeout: 8000 });
+  const inFs = await page.evaluate(() => ({ overlay: getComputedStyle(document.querySelector('.uxk-subs')).display !== 'none' }));
+  await page.evaluate(() => document.exitFullscreen());
+  await page.waitForSelector('.uxk-capbox', { timeout: 8000 });
+  await page.waitForSelector('.uxk-toolbar', { timeout: 8000 });
+  check('전체화면에서는 박스·막대를 걷고 영상 위 자막으로 보임, 나오면 박스와 막대가 돌아옴', inFs.overlay && (await barGeometry()).mode === 'below', JSON.stringify(inFs));
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await page.waitForFunction(() => !document.querySelector('.uxk-capbox') && getComputedStyle(document.getElementById('strip')).display !== 'none', null, { timeout: 6000 });
+  check('이중 자막을 끄면 박스가 사라지고 Udemy 기본 자막 띠가 돌아옴', true);
+
+  // 영상 아래에 자막 띠는 없고 대본 목록에 같은 문장만 있는 화면: 목록 줄을 자막 띠로 착각하지 않고 영상 위 자막으로 대체
+  mock.setCc('list');
+  await setSubs(false);
+  await open();
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await page.waitForFunction(() => (document.querySelector('.uxk-sub1') || {}).textContent === 'Hello world', null, { timeout: 10000 });
+  await page.waitForTimeout(3600); // 띠를 못 찾고 기다리는 시간(3초)이 지나 영상 위 자막으로 바뀔 때까지
+  const guarded = await page.evaluate(() => ({ box: !!document.querySelector('.uxk-capbox'), marked: document.querySelectorAll('[data-uxk-native-cc]').length, listVisible: getComputedStyle(document.getElementById('list')).display !== 'none', overlay: getComputedStyle(document.querySelector('.uxk-subs')).display !== 'none' }));
+  check('대본 목록의 같은 문장 줄은 건드리지 않고 영상 위 자막으로 대체 (기본 자막 띠가 없는 경우)', !guarded.box && guarded.marked === 0 && guarded.listVisible && guarded.overlay, JSON.stringify(guarded));
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await waitPressed('Dual Subs', 'false');
+  mock.setCc('');
+
+  // 실제 Udemy 구조를 본뜬 화면 (영상 틀 · 같은 래퍼 안의 자막 띠 · 오른쪽 고정 대본 사이드바): 막대는 영상 블록 아래, 이중 자막은 띠 자리, 대본 줄은 그대로
+  mock.setCc('udemy');
+  await setSubs(false);
+  await open();
+  const udemyGeo = () => page.evaluate(() => {
+    const bar = document.querySelector('.uxk-toolbar'), well = document.querySelector('.caption-well'), box = document.querySelector('.uxk-capbox'), row = document.querySelector('.row-video');
+    const b = bar.getBoundingClientRect(), base = (box || well).getBoundingClientRect();
+    return { mode: bar.dataset.mode, afterRow: row.nextElementSibling === bar, gap: Math.round(b.top - base.bottom), layerIn: document.querySelector('.uxk-layer').parentElement.id, box: !!box, boxBeforeWell: !!box && box.nextElementSibling === well, wellHidden: getComputedStyle(well).display === 'none', rows: document.querySelectorAll('[data-purpose="sidebar-content"] [data-uxk-native-cc]').length, marked: document.querySelectorAll('[data-uxk-native-cc]').length };
+  });
+  const before = await udemyGeo();
+  check('실제 구조: 도구 막대는 영상 블록(영상+자막 띠) 바로 아래에 붙고, 겹침 층은 영상 틀 안에 있음', before.mode === 'below' && before.afterRow && before.gap >= -2 && before.gap <= 6 && before.layerIn === 'shaka-video-container' && !before.box, JSON.stringify(before));
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await page.waitForSelector('.uxk-capbox', { timeout: 10000 });
+  await page.waitForFunction(() => document.querySelector('.uxk-cap2') && document.querySelector('.uxk-cap2').textContent === '안녕 세상', null, { timeout: 10000 });
+  await page.waitForFunction(() => { const b = document.querySelector('.uxk-toolbar'), x = document.querySelector('.uxk-capbox'); return b.getBoundingClientRect().top >= x.getBoundingClientRect().bottom - 2; }, null, { timeout: 6000 });
+  const after = await udemyGeo();
+  check('실제 구조: 이중 자막이 자막 띠(프랑스어) 자리를 대체하고 막대는 박스 아래, 대본 줄은 그대로', after.box && after.boxBeforeWell && after.wellHidden && after.marked === 1 && after.rows === 0 && after.mode === 'below' && after.afterRow && after.gap >= -2 && after.gap <= 6, JSON.stringify(after));
+  await page.click('.uxk-toolbar button:text("Dual Subs")');
+  await waitPressed('Dual Subs', 'false');
+  mock.setCc('');
+
+  // 전체화면: 막대는 걷히고(영상 아래 자리가 없으므로), 나오면 다시 붙음
+  await setSubs(false);
+  await open();
+  await page.evaluate(() => document.querySelector('.uxk-layer').parentElement.requestFullscreen());
+  await page.waitForFunction(() => !!document.fullscreenElement && !document.querySelector('.uxk-toolbar'), null, { timeout: 8000 });
+  await page.evaluate(() => document.exitFullscreen());
+  await page.waitForSelector('.uxk-toolbar', { timeout: 8000 });
+  check('전체화면에서는 막대를 걷고, 나오면 영상 아래에 다시 붙음', (await barGeometry()).mode === 'below');
+
+  // 영상 영역이 잘려 아래 자리가 가려지는 화면: 영상 아래 가장자리에 띄워 붙이고 아래 내용을 가리지 않게 빈 칸을 둠
+  mock.setClip(true);
+  await open();
+  await page.waitForFunction(() => (document.querySelector('.uxk-toolbar') || {}).dataset && document.querySelector('.uxk-toolbar').dataset.mode === 'float', null, { timeout: 8000 });
+  const fl = await page.evaluate(() => {
+    const bar = document.querySelector('.uxk-toolbar'), host = document.querySelector('[data-purpose="video-player"]');
+    const b = bar.getBoundingClientRect(), h = host.getBoundingClientRect(), sp = document.querySelector('.uxk-bar-spacer');
+    return { position: getComputedStyle(bar).position, gap: Math.round(b.top - h.bottom), inViewport: b.bottom <= window.innerHeight + 1, spacerH: sp ? Math.round(sp.getBoundingClientRect().height) : -1, barH: Math.round(b.height), left: Math.round(b.left - h.left) };
+  });
+  check('잘리는 화면: 영상 아래 가장자리에 띄워 붙고 빈 칸을 둠 (float)', fl.position === 'fixed' && Math.abs(fl.gap) <= 4 && fl.inViewport && fl.spacerH === fl.barH && Math.abs(fl.left) <= 2, JSON.stringify(fl));
+  mock.setClip(false);
+  await setSubs(false);
+}
+
 
 async function fallbackTests() {
   process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1'; // 서비스 워커 요청도 모의 서버로 라우팅
@@ -479,7 +585,7 @@ async function fallbackTests() {
     await page.goto('https://www.udemy.com/course/test-course/learn/lecture/1001');
     await page.waitForSelector('.uxk-pill', { timeout: 10000 });
     const pill = await page.$eval('.uxk-pill', (n) => n.textContent);
-    check('대체 경로: 진행 API 실패 → 진행률 기준 추정', pill.includes('추정'), pill);
+    check('대체 경로: 진행 API 실패 → 진행률 기준 추정', pill.includes('estimated'), pill);
     await page.waitForFunction(() => document.querySelector('video') && document.querySelector('video').readyState >= 2, null, { timeout: 10000 });
     await page.mouse.click(1200, 800);
     await page.keyboard.press('v');
@@ -507,7 +613,7 @@ async function fallbackTests() {
   context.on('page', (p) => console.log('+ new page', p.url()));
   page.on('console', (m) => { if (m.type() === 'error' || /\[UXK\]/.test(m.text())) pageErrors.push('console: ' + m.text()); });
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'https://www.udemy.com' });
-  const sections = [['library', () => libraryTests(page, mock)], ['player', () => playerTests(page, mock, sw)], ['catalog', () => catalogTests(page, sw)], ['options', () => optionsTests(context, sw, extId)]];
+  const sections = [['library', () => libraryTests(page, mock)], ['player', () => playerTests(page, mock, sw)], ['toolbar', () => toolbarTests(page, mock, sw)], ['catalog', () => catalogTests(page, sw)], ['options', () => optionsTests(context, sw, extId)]];
   for (const [name, fn] of sections) {
     try { await fn(); } catch (e) {
       check(`[${name}] 예외 없이 완료`, false, e.message.split('\n')[0]);

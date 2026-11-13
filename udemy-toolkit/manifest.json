@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Udemy Toolkit KR",
+  "name": "Toolkit for Udemy",
   "version": "2.0.0",
-  "description": "Udemy 내 강의 정렬·필터·일괄 보관, 고배속·단축키·PiP·캡처, 이중 자막·문장 반복·문장 수집, 메모, 남은 시간, 보유 강의 표시, 학습 기록",
+  "description": "Unofficial Udemy toolkit: library tools, speed & hotkeys, dual subtitles, sentence loop, notes, PiP, capture, study stats.",
   "icons": {
     "16": "icons/16.png",
     "32": "icons/32.png",
@@ -28,7 +28,7 @@
   },
   "action": {
     "default_popup": "pages/popup.html",
-    "default_title": "Udemy Toolkit",
+    "default_title": "Toolkit for Udemy",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png"
@@ -57,6 +57,9 @@
         "content/player/lessons.js",
         "content/player/notes.js",
         "content/player/tools.js",
+        "content/player/nativecc.js",
+        "content/player/capbox.js",
+        "content/player/bar.js",
         "content/player/index.js",
         "content/catalog.js",
         "content/diagnose.js",
@@ -84,37 +87,37 @@
       "suggested_key": {
         "default": "Alt+Shift+P"
       },
-      "description": "재생/일시정지 (다른 탭에 있어도)"
+      "description": "Play / pause (works from other tabs)"
     },
     "seek-back": {
       "suggested_key": {
         "default": "Alt+Shift+Left"
       },
-      "description": "뒤로 이동"
+      "description": "Seek back"
     },
     "seek-forward": {
       "suggested_key": {
         "default": "Alt+Shift+Right"
       },
-      "description": "앞으로 이동"
+      "description": "Seek forward"
     },
     "screenshot": {
       "suggested_key": {
         "default": "Alt+Shift+S"
       },
-      "description": "영상 화면 캡처 (보호 영상 대응)"
+      "description": "Capture the video frame (works with protected video)"
     },
     "speed-up": {
-      "description": "속도 올리기"
+      "description": "Speed up"
     },
     "speed-down": {
-      "description": "속도 내리기"
+      "description": "Speed down"
     },
     "next-lecture": {
-      "description": "다음 강의"
+      "description": "Next lecture"
     },
     "quick-note": {
-      "description": "타임스탬프 메모"
+      "description": "Timestamped note"
     }
   }
 }

@@ -19,7 +19,7 @@
     if (active && active !== mod) { try { active.destroy(); } catch (e) { console.warn('[UXK] destroy', e); } }
     active = mod || null;
     if (active) {
-      try { await active.init(S); } catch (e) { console.warn('[UXK] init 실패', route, e); }
+      try { await active.init(S); } catch (e) { console.warn('[UXK] init failed', route, e); }
     }
   }
 

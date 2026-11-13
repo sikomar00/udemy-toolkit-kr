@@ -134,11 +134,12 @@ textarea.uxk-input { resize: vertical; min-height: 80px; }
   font: 700 18px/1 var(--uxk-font); padding: 9px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; white-space: nowrap;
 }
 .uxk-indicator.uxk-show { opacity: 1; }
-.uxk-toolbar {
-  position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 2px; background: rgba(20,20,24,.78);
-  border-radius: 8px; padding: 3px; pointer-events: auto; opacity: 0; transition: opacity .2s;
+.uxk-toolbar { /* 영상 아래에 붙는 도구 막대. 자리는 bar.js가 잡는다 */
+  box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-height: 36px; padding: 4px 10px;
+  background: #1c1d1f; font-family: var(--uxk-font);
 }
-.uxk-host:hover .uxk-toolbar, .uxk-toolbar:hover, .uxk-toolbar:focus-within, .uxk-toolbar.uxk-flash, :fullscreen .uxk-toolbar:hover { opacity: 1; }
+.uxk-toolbar[data-mode="float"] { position: fixed; z-index: 2147483000; }
+.uxk-bar-spacer { display: block; flex: none; width: 0; }
 .uxk-tb-btn, .uxk-tb-speed { background: transparent; border: 0; color: #fff; font: 600 12px/1 var(--uxk-font); padding: 7px 8px; border-radius: 6px; cursor: pointer; }
 .uxk-tb-btn:hover, .uxk-tb-speed:hover { background: rgba(255,255,255,.16); }
 .uxk-tb-btn.uxk-on { background: rgba(140,110,255,.5); }
@@ -157,11 +158,22 @@ html.uxk-hide-native-cc [class*="captions-display--captions-container"] { displa
 html.uxk-theater [class*="curriculum-item-view--scaled-height-limiter"] { max-height: calc(100vh - 56px) !important; height: calc(100vh - 56px) !important; }
 html.uxk-theater [class*="curriculum-item-view--aspect-ratio-container"] { max-height: calc(100vh - 56px) !important; }
 
+/* 이중 자막 박스: Udemy 기본 자막 띠 자리에 놓인다 (capbox.js) */
+.uxk-capbox { box-sizing: border-box; width: 100%; background: #000; color: #fff; text-align: center; padding: 8px 16px; min-height: calc(var(--uxk-sub-size, 22px) * 2.6 + 16px); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; font-family: var(--uxk-font); user-select: text; }
+.uxk-cap1, .uxk-cap2 { white-space: pre-wrap; }
+.uxk-cap1:empty, .uxk-cap2:empty { display: none; }
+.uxk-cap1 { color: #fff; font: 600 var(--uxk-sub-size, 22px)/1.4 var(--uxk-font); }
+.uxk-cap2 { color: #ffd54f; font: 600 calc(var(--uxk-sub-size, 22px) * .86)/1.4 var(--uxk-font); }
+[data-uxk-native-cc] { display: none !important; } /* 숨길 Udemy 기본 자막 (띠 또는 영상 안쪽 자막) */
+html.uxk-capbox-on .uxk-layer .uxk-subs { display: none !important; } /* 박스를 쓰는 동안은 영상 위 자막을 숨긴다 */
+
+.uxk-toolbar .uxk-tb-btn:focus-visible, .uxk-toolbar .uxk-tb-speed:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
 .uxk-pill {
   position: absolute; left: 10px; top: 10px; background: rgba(20,20,24,.78); color: #fff; border: 0; pointer-events: auto;
   border-radius: 8px; padding: 8px 10px; font: 600 12px/1 var(--uxk-font); cursor: pointer; opacity: 0; transition: opacity .2s;
 }
-.uxk-host:hover .uxk-pill, .uxk-pill:hover, .uxk-pill:focus-visible, .uxk-toolbar.uxk-flash ~ .uxk-pill { opacity: 1; }
+.uxk-host:hover .uxk-pill, .uxk-pill:hover, .uxk-pill:focus-visible, .uxk-pill.uxk-flash { opacity: 1; }
 .uxk-pill:hover { background: rgba(0,0,0,.92); }
 .uxk-sec-tools { display: flex; gap: 6px; padding: 6px 12px; }
 .uxk-sec-btn { font: 600 11px var(--uxk-font); color: var(--uxk-accent); background: #fff; border: 1px solid #c8bdf0; border-radius: 12px; padding: 3px 9px; cursor: pointer; }

@@ -37,9 +37,9 @@
       box.innerHTML = [
         c.rating ? `<b class="uxk-rate">★${c.rating.toFixed(1)}</b> <span>(${UXK.fmtCompact(c.reviews)})</span>` : '',
         c.hours ? `<span>${c.hours.toFixed(1)}h</span>` : '',
-        c.updated ? `<span>업데이트 ${esc(c.updated.slice(0, 7))}</span>` : '',
-        c.subs ? `<span>수강생 ${UXK.fmtCompact(c.subs)}</span>` : '',
-        m.queue ? '<span class="uxk-chip uxk-chip-q">학습 큐</span>' : '',
+        c.updated ? `<span>Updated ${esc(c.updated.slice(0, 7))}</span>` : '',
+        c.subs ? `<span>${UXK.fmtCompact(c.subs)} students</span>` : '',
+        m.queue ? '<span class="uxk-chip uxk-chip-q">Queue</span>' : '',
         ...(m.tags || []).map((t) => `<span class="uxk-chip">${esc(t)}</span>`),
       ].filter(Boolean).join(' ');
     });
@@ -92,26 +92,26 @@
   }
   async function archiveWithoutReload(id) {
     const c = P.byId.get(id);
-    const name = c ? `"${c.title.slice(0, 40)}"` : `강의 ${id}`;
+    const name = c ? `"${c.title.slice(0, 40)}"` : `Course ${id}`;
     try {
       await UXK.api.archive(id);
       hideNativeCard(id, true);
       if (c) { c.archived = true; await UXK.lib.save(P.cache); }
       P.render();
-      UXK.ui.toast(`${name} 보관됨 (새로고침 없음)`, {
+      UXK.ui.toast(`${name} archived (no reload)`, {
         timeout: 7000,
-        actions: [{ label: '되돌리기', onClick: async () => {
+        actions: [{ label: 'Undo', onClick: async () => {
           try {
             await UXK.api.unarchive(id);
             hideNativeCard(id, false);
             if (c) { c.archived = false; await UXK.lib.save(P.cache); }
             P.render();
-            UXK.ui.toast('보관을 되돌렸습니다');
-          } catch (err) { UXK.ui.toast(`되돌리기 실패 (${err.message}). Udemy 보관됨 필터에서 직접 해제하세요.`, { timeout: 8000, kind: 'err' }); }
+            UXK.ui.toast('Archive undone');
+          } catch (err) { UXK.ui.toast(`Undo failed (${err.message}). Unarchive it from Udemy\'s Archived filter.`, { timeout: 8000, kind: 'err' }); }
         } }],
       });
     } catch (err) {
-      UXK.ui.toast(`보관 실패 (${err.message}). 옵션에서 "새로고침 없는 보관"을 끄면 Udemy 기본 동작을 씁니다.`, { timeout: 9000, kind: 'err' });
+      UXK.ui.toast(`Archive failed (${err.message}). Turn off "Archive without reload" in Settings to use Udemy\'s default behavior.`, { timeout: 9000, kind: 'err' });
     }
   }
 

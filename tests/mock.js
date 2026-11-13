@@ -93,15 +93,37 @@ ${cards.map((id) => `<div><div class="enrolled-course-card--container--WJYo9 det
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.menu').forEach((m) => (m.hidden = true)); });
 </script></body></html>`;
 
-const PLAYER_HTML = (lectureId) => `<!doctype html><html><head><meta charset="utf-8"><title>Python 부트캠프 테스트 | Udemy</title></head><body>
+
+// 실제 Udemy 강의 화면 구조를 본뜬 영상 영역 (사용자가 알려 준 구조): 영상 틀 아래에 같은 래퍼 안의 자막 띠(well), 오른쪽에 고정된 대본 사이드바
+const UDEMY_PLAYER = `<div id="udemy-main" style="margin-right:416px">
+  <div class="row-video" style="background:#000"><div data-purpose="curriculum-item-viewer-content"><section class="lecture-view"><div data-purpose="shaka-video-player" style="position:relative;display:flex;flex-direction:column">
+    <div id="shaka-video-container" style="position:relative;height:444px;display:flex;flex-direction:column;background:#000">
+      <video id="v" src="/mock/video.webm" muted autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain"></video>
+      <button data-purpose="go-to-previous" style="position:absolute;left:0;top:50%;z-index:3">‹</button><button data-purpose="go-to-next" style="position:absolute;right:0;top:50%;z-index:3">›</button>
+      <div data-purpose="video-control-bar" style="position:absolute;left:0;right:0;bottom:0;height:70px;color:#fff"><div data-purpose="video-controls"><button data-purpose="playback-rate-button">1x</button><span data-purpose="progress-display">0:01 / 0:05</span></div></div>
+    </div>
+    <div class="caption-well" style="height:96px;background:#000;color:#fff;display:flex;justify-content:center;padding-top:14px"><span class="cue-text">et ça ne donnera pas un IMC inexact.</span></div>
+  </div></section></div></div>
+  <div class="row-dashboard"><div data-purpose="tab-nav-buttons" role="tablist" style="height:48px"><button role="tab">개요</button><button role="tab" aria-selected="true">Q&amp;A</button></div></div>
+</div>
+<div class="sidebar-column" style="position:fixed;top:0;right:0;bottom:0;width:416px;background:#fff"><section data-purpose="sidebar"><div data-purpose="sidebar-content" style="height:200px;overflow-y:auto"><div data-purpose="transcript-panel">
+  <div class="cue-container"><p data-purpose="transcript-cue" role="button" tabindex="-1"><span data-purpose="cue-text">Hello world</span></p></div>
+  <div class="cue-container"><p data-purpose="transcript-cue" role="button" tabindex="-1"><span data-purpose="cue-text">Second sentence here</span></p></div>
+  <div class="cue-container"><p data-purpose="transcript-cue-active" role="button" tabindex="-1"><span data-purpose="cue-text">Third sentence &amp; more</span></p></div>
+  <div class="cue-container"><p data-purpose="transcript-cue" role="button" tabindex="-1"><span data-purpose="cue-text">Long cue</span></p></div>
+  <div class="cue-container"><p data-purpose="transcript-cue" role="button" tabindex="-1"><span data-purpose="cue-text">more rows</span></p></div>
+</div></div></section></div>`;
+
+const PLAYER_HTML = (lectureId, clip = false, cc = '') => `<!doctype html><html><head><meta charset="utf-8"><title>Python 부트캠프 테스트 | Udemy</title></head><body>
 <div data-module-id="course-taking" data-module-args='{"courseId":101,"isMobile":false}'>
   <header><h1 data-purpose="course-header-title">Python 부트캠프 테스트</h1></header>
   <input id="page-input" placeholder="page input">
-  <div data-purpose="video-player" style="width:800px;height:450px;background:#000">
+  ${cc === 'udemy' ? UDEMY_PLAYER : `${clip ? '<div style="height:460px;overflow:hidden">' : ''}<div data-purpose="video-player" style="position:relative;width:800px;height:450px;background:#000">
     <video id="v" src="/mock/video.webm" muted autoplay playsinline style="width:100%;height:100%"></video>
-    <div data-purpose="video-controls"><button data-purpose="playback-rate-button">1x</button></div>
-    <div class="captions-display--captions-container--PqdGQ">native caption</div>
-  </div>
+    <div data-purpose="video-controls" style="position:absolute;left:0;bottom:0"><button data-purpose="playback-rate-button">1x</button></div>
+    ${cc === 'unknown' ? '<div class="cc-wrap-x1" style="position:absolute;left:0;right:0;bottom:60px;text-align:center"><span class="cc-text-y2" style="background:#000;color:#fff">Bonjour le monde</span></div>' : cc === 'band' || cc === 'list' ? '' : '<div class="captions-display--captions-container--PqdGQ" style="position:absolute;left:0;bottom:30px;color:#fff">native caption</div>'}
+  </div>${clip ? '</div>' : ''}
+  ${cc === 'band' || cc === 'list' ? (cc === 'band' ? '<div id="strip" class="cap-band-x9" style="background:#000;color:#fff;text-align:center;height:60px;line-height:60px">Bonjour le monde</div>' : '') + '<div id="list" style="height:60px;overflow:auto"><div>Hello world</div><div>Second sentence here</div><div>Third sentence &amp; more</div><div>Long cue</div><div>x</div><div>y</div></div>' : ''}`}
   <a id="go-to-next-item" href="#">next</a>
   <div data-purpose="curriculum-section-container" style="width:400px">
     <div data-purpose="section-panel-0"><button class="ud-accordion-panel-title">Section 1</button>
@@ -168,7 +190,7 @@ function createMock(opts = {}) {
       return route.fulfill({ status: 200, contentType: 'video/webm', headers: { 'Accept-Ranges': 'bytes', 'Content-Length': String(total) }, body: VIDEO });
     }
     if (p.startsWith('/home/my-courses/')) return route.fulfill({ status: 200, contentType: 'text/html', body: LIB_HTML([101, 102, 103]) });
-    if (/^\/course\/[^/]+\/learn\/lecture\/(\d+)/.test(p)) return route.fulfill({ status: 200, contentType: 'text/html', body: PLAYER_HTML(+RegExp.$1) });
+    if (/^\/course\/[^/]+\/learn\/lecture\/(\d+)/.test(p)) return route.fulfill({ status: 200, contentType: 'text/html', body: PLAYER_HTML(+RegExp.$1, opts.clipPlayer, opts.ccMode) });
     if (p.startsWith('/courses/search')) return route.fulfill({ status: 200, contentType: 'text/html', body: SEARCH_HTML });
     if (/^\/course\/slug-101\/?$/.test(p)) return route.fulfill({ status: 200, contentType: 'text/html', body: LANDING_HTML });
 
@@ -222,7 +244,7 @@ function createMock(opts = {}) {
     }
     return route.fulfill({ status: 404, contentType: 'text/plain', body: 'mock 404 ' + p });
   }
-  return { handle, log, courses };
+  return { handle, log, courses, setClip: (on) => { opts.clipPlayer = on; }, setCc: (mode) => { opts.ccMode = mode; } }; // setClip: 영상 영역이 잘리는 화면 (막대 대체 위치 시험용), setCc('unknown'): 기본 자막의 클래스 이름이 바뀐 화면
 }
 
 module.exports = { createMock };

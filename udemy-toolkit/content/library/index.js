@@ -14,7 +14,7 @@
     P.writeForm(P.state.filters);
     P.render();
     if (!P.cache || UXK.lib.isStale(P.cache, P.S.library.autoRefreshHours)) {
-      try { await P.ensureData(!P.cache ? false : true); P.fillOptions(); P.render(); P.processCards(); } catch (err) { P.setStatus('불러오기 실패: ' + err.message + ' (로그인 상태 확인)'); }
+      try { await P.ensureData(!P.cache ? false : true); P.fillOptions(); P.render(); P.processCards(); } catch (err) { P.setStatus('Load failed: ' + err.message + ' (check that you are signed in)'); }
     }
   }
   function closePanel() { if (P.panel) P.panel.classList.remove('uxk-open'); }
@@ -30,7 +30,7 @@
     P.setCache(await UXK.lib.load());
     if (!started) return; // 초기화 도중 다른 페이지로 이동한 경우
     if (P.S.library.panel) {
-      P.fab = el('button', { class: 'uxk-fab', id: 'uxk-fab', text: '내 강의 도구', title: '정렬·필터·일괄 작업 (Udemy Toolkit)' });
+      P.fab = el('button', { class: 'uxk-fab', id: 'uxk-fab', text: 'My Course Tools', title: 'Sort, filter and bulk actions (Toolkit for Udemy)' });
       P.fab.onclick = () => {
         if (!UXK.alive()) { UXK.ui.toast(new UXK.DeadError().message, { kind: 'err', timeout: 8000 }); return; }
         P.panel && P.panel.classList.contains('uxk-open') ? closePanel() : openPanel();

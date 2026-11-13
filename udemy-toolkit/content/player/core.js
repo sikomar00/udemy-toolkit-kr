@@ -43,7 +43,7 @@
       triedLibRefresh = true;
       try { await UXK.lib.refresh(); id = await bySlug(); } catch (e) { UXK.log('course id lookup failed', e); }
     }
-    if (!id) UXK.log('courseId를 찾지 못함');
+    if (!id) UXK.log('courseId not found');
     return id;
   }
   async function courseFromCache() {
@@ -53,14 +53,14 @@
   function courseTitle() {
     const h = document.querySelector('[data-purpose="course-header-title"], h1[data-purpose="course-title"], header h1');
     if (h && h.textContent.trim()) return h.textContent.trim();
-    return (document.title || '').split('|')[0].trim() || 'Udemy 강의';
+    return (document.title || '').split('|')[0].trim() || 'Udemy course';
   }
   function lectureTitle() {
     const it = P.cur.items && P.cur.items.find((x) => x.id === ctx.lectureId && x._class === 'lecture');
     if (it) return it.title;
     const n = document.querySelector('[data-purpose="lead-title"], [class*="curriculum-item-link--is-current"] [data-purpose="item-title"]');
     if (n && n.textContent.trim()) return n.textContent.trim();
-    return `강의 ${ctx.lectureId || ''}`.trim();
+    return `Lecture ${ctx.lectureId || ''}`.trim();
   }
   const lectureUrl = (lectureId, t) => `${location.origin}/course/${ctx.slug}/learn/lecture/${lectureId}${t != null ? `?uxk_t=${Math.floor(t)}` : ''}`;
 
@@ -81,7 +81,9 @@
   }
 
   let indicatorEl = null, toolbar = null;
+  const toggles = {}; // 켜짐 표시가 필요한 도구 막대 버튼
   P.layer = null;
+  P.toolbar = null; // 영상 아래에 붙는 도구 막대 (자리는 bar.js가 잡는다)
   P.subsBox = null;
   P.sub1 = null;
   P.sub2 = null;
@@ -91,24 +93,32 @@
     indicatorEl = el('div', { class: 'uxk-indicator' });
     P.sub1 = el('div', { class: 'uxk-sub1' });
     P.sub2 = el('div', { class: 'uxk-sub2' });
-    P.subsBox = el('div', { class: 'uxk-subs', title: '드래그해서 위치 이동' }, [P.sub1, P.sub2]);
-    P.speedLabel = el('button', { class: 'uxk-tb-speed', title: '클릭: 1배속 ↔ 이전 속도' });
-    const b = (label, title, fn, cls = '') => {
-      const n = el('button', { class: 'uxk-tb-btn ' + cls, title, text: label });
+    P.subsBox = el('div', { class: 'uxk-subs', title: 'Drag to move' }, [P.sub1, P.sub2]);
+    P.speedLabel = el('button', { class: 'uxk-tb-speed', title: 'Click: 1x ↔ previous speed' });
+    const b = (label, title, fn, cls = '', toggleKey = '') => {
+      const n = el('button', { type: 'button', class: 'uxk-tb-btn ' + cls, title, text: label });
       n.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fn(e); });
+      if (toggleKey) { n.setAttribute('aria-pressed', 'false'); toggles[toggleKey] = n; }
       return n;
     };
-    toolbar = el('div', { class: 'uxk-toolbar' }, [
-      b('−', `속도 낮추기 (${P.S.hotkeys.speedDown})`, () => P.run('speedDown')),
+    const tip = (text, action) => (P.S.hotkeys[action] ? `${text} (${P.S.hotkeys[action]})` : text);
+    const sep = () => el('span', { class: 'uxk-tb-sep' });
+    toolbar = el('div', { class: 'uxk-toolbar', role: 'toolbar', 'aria-label': 'Toolkit for Udemy tools' }, [
+      b('−', tip('Slower', 'speedDown'), () => P.run('speedDown')),
       P.speedLabel,
-      b('+', `속도 높이기 (${P.S.hotkeys.speedUp})`, () => P.run('speedUp')),
-      el('span', { class: 'uxk-tb-sep' }),
-      b('PiP', `화면 속 화면 (${P.S.hotkeys.pip})`, () => P.run('pip')),
-      b('캡처', `현재 화면 캡처 (${P.S.hotkeys.screenshot})`, () => P.run('screenshot')),
-      b('메모', `타임스탬프 메모 (${P.S.hotkeys.note})`, () => P.run('note')),
-      b('대본', '이 강의 대본 전체를 클립보드에 복사', () => P.run('copyTranscript')),
-      b('자막', `이중 자막 켜기/끄기 (${P.S.hotkeys.subs})`, () => P.openSubsMenu().catch((e) => UXK.ui.toast(e.message, { kind: 'err' })), 'uxk-tb-subs'),
-      b('⋯', '더 보기', (e) => P.openMoreMenu(e)),
+      b('+', tip('Faster', 'speedUp'), () => P.run('speedUp')),
+      sep(),
+      b('Dual Subs', tip('Dual subtitles on/off', 'subs'), () => P.run('subs'), '', 'subs'),
+      b('Loop', tip('Loop current sentence on/off', 'loopCue'), () => P.run('loopCue'), '', 'loop'),
+      sep(),
+      b('Copy Transcript', 'Copy the whole transcript of this lecture to the clipboard', () => P.run('copyTranscript')),
+      b('Note', tip('Timestamped note', 'note'), () => P.run('note')),
+      b('Capture', tip('Capture the current frame', 'screenshot'), () => P.run('screenshot')),
+      b('PiP', tip('Picture-in-picture', 'pip'), () => P.run('pip')),
+      b('Wide', tip('Remove the video height limit', 'theater'), () => P.run('theater'), '', 'theater'),
+      sep(),
+      b('Subtitles', 'Subtitle languages & export', () => P.openSubsMenu().catch((e) => UXK.ui.toast(e.message, { kind: 'err' })), 'uxk-tb-subs'),
+      b('⋯', 'More', (e) => P.openMoreMenu(e)),
     ]);
     P.speedLabel.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); P.run('speedReset'); });
     // 툴바·자막 클릭이 Udemy 재생/일시정지로 전달되지 않게 차단
@@ -118,7 +128,8 @@
     });
     toolbar.addEventListener('mousedown', (e) => e.preventDefault()); // 눌러도 버튼에 초점이 남지 않게 (남으면 이어서 누른 Space가 그 버튼을 또 누른다)
     enableSubsDrag();
-    P.layer = el('div', { class: 'uxk-layer' }, [indicatorEl, P.subsBox, toolbar]);
+    P.toolbar = toolbar;
+    P.layer = el('div', { class: 'uxk-layer' }, [indicatorEl, P.subsBox]);
     applyLayerStyle();
   }
   function placeLayer() {
@@ -130,7 +141,6 @@
     if (getComputedStyle(target).position === 'static') target.classList.add('uxk-host-rel');
     target.classList.add('uxk-host');
     if (P.layer.parentNode !== target) target.appendChild(P.layer);
-    toolbar.style.display = P.S.player.toolbar ? '' : 'none';
   }
   function applyLayerStyle() {
     P.applyNativeCc();
@@ -140,8 +150,15 @@
     P.layer.style.setProperty('--uxk-sub-bottom', P.S.subs.bottom + '%');
     P.layer.style.setProperty('--uxk-sub-bg', `rgba(0,0,0,${P.S.subs.bgOpacity})`);
     P.subsBox.style.display = P.S.subs.enabled ? '' : 'none';
-    const sb = toolbar && toolbar.querySelector('.uxk-tb-subs');
-    if (sb) sb.classList.toggle('uxk-on', !!P.S.subs.enabled);
+    updateToolbar();
+  }
+  // 켜짐 표시를 현재 설정과 상태에 맞춘다
+  function updateToolbar() {
+    if (!toolbar) return;
+    const mark = (key, on) => { toggles[key].classList.toggle('uxk-on', !!on); toggles[key].setAttribute('aria-pressed', on ? 'true' : 'false'); };
+    mark('subs', P.S.subs.enabled);
+    mark('loop', P.subs.loop);
+    mark('theater', P.S.player.theater);
   }
   let indTimer = null;
   function indicator(text) {
@@ -151,7 +168,7 @@
     indicatorEl.classList.add('uxk-show');
     clearTimeout(indTimer);
     indTimer = setTimeout(() => indicatorEl.classList.remove('uxk-show'), 1100);
-    if (toolbar) { toolbar.classList.add('uxk-flash'); setTimeout(() => toolbar && toolbar.classList.remove('uxk-flash'), 1500); }
+    if (P.pill) { P.pill.classList.add('uxk-flash'); setTimeout(() => P.pill && P.pill.classList.remove('uxk-flash'), 1500); } // 남은 시간 표시도 잠깐 보여 준다
   }
 
   function enableSubsDrag() {
@@ -179,5 +196,5 @@
   }
 
   Object.assign(P, { ctx, parseUrl, resolveCourseId, courseFromCache, courseTitle, lectureTitle, lectureUrl,
-    findVideo, hostOf, buildLayer, placeLayer, applyLayerStyle, indicator });
+    findVideo, hostOf, buildLayer, placeLayer, applyLayerStyle, updateToolbar, indicator });
 })();
