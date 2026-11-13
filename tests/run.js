@@ -40,6 +40,30 @@ async function readDownload(page, trigger) {
 const toastText = (page) => page.evaluate(() => Array.from(document.querySelectorAll('.uxk-toast-text')).map((n) => n.textContent).join(' | '));
 const waitToast = (page, re, timeout = 8000) => page.waitForFunction((src) => Array.from(document.querySelectorAll('.uxk-toast-text')).some((n) => new RegExp(src).test(n.textContent)), re.source, { timeout });
 
+// 글자 색 대비(WCAG AA: 4.5:1, 큰 글자 3:1)가 모자란 글자를 찾는다. 장식(aria-hidden)과 꺼진 단추는 뺀다
+const lowContrastOf = (page, rootSel) => page.evaluate((sel) => {
+  const lum = (c) => { const [r, g, b] = c.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const parse = (str) => { const m = str.match(/[\d.]+/g).map(Number); return { rgb: m.slice(0, 3), a: m.length > 3 ? m[3] : 1 }; };
+  const bgOf = (n) => { for (let e = n; e; e = e.parentElement) { const c = parse(getComputedStyle(e).backgroundColor); if (c.a > 0.9) return c.rgb; } return [255, 255, 255]; };
+  const out = [];
+  const walker = document.createTreeWalker(document.querySelector(sel), NodeFilter.SHOW_TEXT);
+  const seen = new Set();
+  for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+    const e = t.parentElement;
+    if (!e || seen.has(e) || !t.nodeValue.trim() || !e.getClientRects().length) continue;
+    seen.add(e);
+    const cs = getComputedStyle(e);
+    if (e.closest('[aria-hidden="true"]') || cs.visibility === 'hidden' || (e.closest('button, input, select') && e.disabled)) continue;
+    const fg = parse(cs.color).rgb, bg = bgOf(e);
+    const L1 = lum(fg), L2 = lum(bg);
+    const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    const px = parseFloat(cs.fontSize), bold = parseInt(cs.fontWeight, 10) >= 700;
+    const need = px >= 24 || (px >= 18.66 && bold) ? 3 : 4.5;
+    if (ratio < need && !e.closest('button:disabled')) out.push(e.className.toString().slice(0, 24) + ' "' + t.nodeValue.trim().slice(0, 18) + '" ' + ratio.toFixed(2));
+  }
+  return out.slice(0, 8);
+}, rootSel);
+
 async function libraryTests(page, mock) {
   await page.goto('https://www.udemy.com/home/my-courses/learning/');
   await page.waitForSelector('#uxk-fab', { timeout: 10000 });
@@ -75,6 +99,45 @@ async function libraryTests(page, mock) {
   check('보관/미보관 구분 개수', seg[0].includes('250') && seg[1].includes('30'), seg.join(' / '));
   const stats = await page.$eval('.uxk-lib-stats', (n) => n.textContent);
   check('요약 통계 표시', /250/.test(stats) && /not started/.test(stats), stats.slice(0, 120));
+
+  // ---- 접근성 ----
+  const a11y = await page.evaluate(() => {
+    const p = document.getElementById('uxk-lib');
+    const title = document.getElementById(p.getAttribute('aria-labelledby'));
+    return {
+      role: p.getAttribute('role'), modal: p.getAttribute('aria-modal'), name: title && title.textContent,
+      focusInside: p.contains(document.activeElement),
+      scope: [...p.querySelectorAll('[data-scope]')].map((b) => b.getAttribute('aria-pressed')),
+      status: p.querySelector('.uxk-lib-status').getAttribute('role'),
+      rowLabel: p.querySelector('tbody .uxk-sel').getAttribute('aria-label'),
+      allLabel: p.querySelector('.uxk-all').getAttribute('aria-label'),
+      queue: p.querySelector('tbody [data-row="queue"]').getAttribute('aria-pressed'),
+      queueLabel: p.querySelector('tbody [data-row="queue"]').getAttribute('aria-label'),
+      editLabel: p.querySelector('tbody [data-row="edit"]').getAttribute('aria-label'),
+      table: p.querySelector('table').getAttribute('aria-label'),
+      unnamed: [...p.querySelectorAll('button, input, select, textarea')].filter((n) => !(n.getAttribute('aria-label') || (n.labels && n.labels.length) || n.textContent.trim() || n.closest('label'))).map((n) => n.outerHTML.slice(0, 70)),
+    };
+  });
+  check('패널은 이름 있는 대화상자(role=dialog, aria-modal)이고 열면 초점이 안으로 들어옴', a11y.role === 'dialog' && a11y.modal === 'true' && a11y.name === 'My Course Tools' && a11y.focusInside, JSON.stringify([a11y.role, a11y.modal, a11y.name, a11y.focusInside]));
+  check('탭 단추에 선택 상태(aria-pressed), 상태 줄은 role=status', a11y.scope.join() === 'true,false,false' && a11y.status === 'status', a11y.scope.join());
+  check('체크박스·큐·편집 단추에 강의 제목이 들어간 이름', /^Select /.test(a11y.rowLabel) && a11y.allLabel === 'Select all shown courses' && /^Study queue: /.test(a11y.queueLabel) && /^Edit tags and notes: /.test(a11y.editLabel) && a11y.queue === 'false' && a11y.table === 'Your courses', JSON.stringify([a11y.rowLabel, a11y.queueLabel, a11y.editLabel]));
+  check('이름 없는 단추·입력칸이 패널에 없음', a11y.unnamed.length === 0, a11y.unnamed.join(' | '));
+  // 정렬 머리글: 키보드(Enter)로 정렬하고 aria-sort가 바뀜
+  await page.focus('th[data-k="reviews"]');
+  await page.keyboard.press('Enter');
+  const sortA11y = await page.evaluate(() => ({ sort: document.querySelector('th[data-k="reviews"]').getAttribute('aria-sort'), others: [...document.querySelectorAll('th[data-k]')].filter((t) => t.getAttribute('data-k') !== 'reviews').every((t) => t.getAttribute('aria-sort') === 'none'), focusable: [...document.querySelectorAll('th[data-k]')].every((t) => t.tabIndex === 0) }));
+  check('정렬 머리글을 Enter로 누르면 정렬되고 aria-sort(descending)가 표시됨', sortA11y.sort === 'descending' && sortA11y.others && sortA11y.focusable, JSON.stringify(sortA11y));
+  check('정렬 뒤에도 키보드 초점이 같은 머리글에 남음', await page.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-k') === 'reviews'));
+  await page.keyboard.press('Space');
+  check('Space로도 정렬(오름차순으로 바뀜)', (await page.$eval('th[data-k="reviews"]', (n) => n.getAttribute('aria-sort'))) === 'ascending');
+  await page.click('[data-act="reset"]');
+  // Tab으로 돌아도 패널 밖으로 나가지 않음
+  let outside = 0;
+  for (let i = 0; i < 70; i++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => document.getElementById('uxk-lib').contains(document.activeElement)))) outside++; }
+  check('Tab을 70번 눌러도 초점이 패널 밖으로 나가지 않음', outside === 0, String(outside));
+  // 글자 색 대비 (WCAG AA 4.5:1, 큰 글자는 3:1)
+  const lowContrast = await lowContrastOf(page, '#uxk-lib');
+  check('패널 글자 색 대비가 모두 WCAG AA 기준 이상', lowContrast.length === 0, lowContrast.join(' | '));
 
   // Shift+클릭 범위 선택: 체크한 줄부터 Shift를 누르고 누른 줄까지 한꺼번에 같은 상태로
   const rowBox = (i) => `.uxk-lib tbody tr:nth-child(${i + 1}) .uxk-sel`;
@@ -126,6 +189,26 @@ async function libraryTests(page, mock) {
   check('헤더 클릭 정렬 (리뷰 내림차순)', revs.every((v, i) => i === 0 || revs[i - 1] >= v));
 
   // 프리셋
+  // 대화상자 접근성: 프리셋 저장 입력창이 이름을 갖고, Tab이 안에서만 돌고, Esc로 닫으면 초점이 단추로 돌아옴
+  await page.focus('[data-act="preset-save"]');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('.uxk-modal');
+  await page.waitForFunction(() => document.querySelector('.uxk-modal').contains(document.activeElement), null, { timeout: 3000 }).catch(() => {});
+  const where = [];
+  const modalA11y = await page.evaluate(() => { const m = document.querySelector('.uxk-modal'); const t = document.getElementById(m.getAttribute('aria-labelledby')); return { role: m.getAttribute('role'), name: t && t.textContent, inside: m.contains(document.activeElement) }; });
+  let escaped = 0;
+  for (let i = 0; i < 8; i++) { await page.keyboard.press('Tab'); const st = await page.evaluate(() => ({ in: document.querySelector('.uxk-modal').contains(document.activeElement), el: document.activeElement.tagName + '.' + String(document.activeElement.className).slice(0, 20) })); where.push(st.el); if (!st.in) escaped++; }
+  const modalContrast = await lowContrastOf(page, '.uxk-modal');
+  check('대화상자 글자 색 대비가 WCAG AA 기준 이상', modalContrast.length === 0, modalContrast.join(' | '));
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.uxk-modal'), null, { timeout: 3000 });
+  const back = await page.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-act'));
+  check('대화상자: 이름(aria-labelledby)·초점 안에서 시작·Tab이 밖으로 안 나감·Esc 뒤 초점 복원', modalA11y.role === 'dialog' && modalA11y.name === 'Filter preset name' && modalA11y.inside && escaped === 0 && back === 'preset-save', JSON.stringify([modalA11y, escaped, back, where.join('>')]));
+  await page.click('[data-act="preset-del"]');
+  await page.waitForSelector('.uxk-toast');
+  const toastA11y = await page.evaluate(() => { const t = document.querySelector('.uxk-toast'); return { role: t.getAttribute('role'), close: t.querySelector('.uxk-toast-x').getAttribute('aria-label') }; });
+  check('알림은 role=status(오류는 alert), 닫기 단추에 이름', toastA11y.role === 'status' && toastA11y.close === 'Close', JSON.stringify(toastA11y));
+
   await page.fill('input[data-f="minr"]', '4.7');
   await page.click('[data-act="apply"]');
   await page.click('[data-act="preset-save"]');
@@ -466,6 +549,15 @@ async function optionsTests(context, sw, extId) {
   await pop.goto(`chrome-extension://${extId}/pages/popup.html`);
   await pop.waitForFunction(() => document.getElementById('today-txt').textContent.length > 0);
   check('팝업 로드', true, await pop.$eval('#today-txt', (n) => n.textContent));
+  check('팝업·설정 페이지의 언어 표시(lang)가 화면 글자(영어)와 맞음', (await pop.evaluate(() => document.documentElement.lang)) === 'en' && (await opt.evaluate(() => document.documentElement.lang)) === 'en');
+  for (const scheme of ['light', 'dark']) {
+    await pop.emulateMedia({ colorScheme: scheme });
+    await opt.emulateMedia({ colorScheme: scheme });
+    const pc = await lowContrastOf(pop, 'body'), oc = await lowContrastOf(opt, 'body');
+    check(`팝업·설정 페이지 글자 색 대비 (${scheme === 'light' ? '밝은' : '어두운'} 화면)`, pc.length === 0 && oc.length === 0, [...pc.map((x) => '팝업 ' + x), ...oc.map((x) => '설정 ' + x)].join(' | '));
+  }
+  await pop.emulateMedia({ colorScheme: null });
+  await opt.emulateMedia({ colorScheme: null });
   await pop.click('#diag');
   check('팝업: Udemy 탭이 아니면 점검 안내', (await pop.$eval('#diag-out', (n) => n.textContent)).includes('Udemy tab'));
   const errs = [];
