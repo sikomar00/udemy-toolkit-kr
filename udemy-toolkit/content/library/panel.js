@@ -138,7 +138,7 @@
       if (!s) return;
       const cur = s.value;
       while (s.options.length > (keepFirst ? 1 : 0)) s.remove(keepFirst ? 1 : 0);
-      values.forEach(([v, t]) => s.appendChild(el('option', { value: v, text: t })));
+      values.forEach(([v, t]) => s.appendChild(el('option', { value: v, 'data-no-i18n': true, text: t })));
       s.value = values.some(([v]) => v === cur) ? cur : '';
     };
     const count = (arr) => { const m = new Map(); arr.forEach((v) => v && m.set(v, (m.get(v) || 0) + 1)); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
@@ -158,15 +158,15 @@
     $(`input[data-f="cap"]`, P.panel).disabled = !has('caption_languages');
     const ps = $('select[data-preset]', P.panel);
     while (ps.options.length > 1) ps.remove(1);
-    Object.keys(P.presets).sort().forEach((k) => ps.appendChild(el('option', { value: k, text: k })));
+    Object.keys(P.presets).sort().forEach((k) => ps.appendChild(el('option', { value: k, 'data-no-i18n': true, text: k })));
   }
 
-  function setStatus(t) { const s = P.panel && $('.uxk-lib-status', P.panel); if (s) s.textContent = t; }
+  function setStatus(msg) { const s = P.panel && $('.uxk-lib-status', P.panel); if (s) s.textContent = UXK.t(msg); }
 
   function renderScopeButtons() {
     const data = P.allData();
     const nA = data.filter((c) => !c.archived).length, nB = data.length - nA;
-    const labels = { active: `Active ${UXK.fmtNum(nA)}`, archived: `Archived ${UXK.fmtNum(nB)}`, all: `All ${UXK.fmtNum(data.length)}` };
+    const labels = { active: UXK.t('Active {0}', UXK.fmtNum(nA)), archived: UXK.t('Archived {0}', UXK.fmtNum(nB)), all: UXK.t('All {0}', UXK.fmtNum(data.length)) };
     $$('[data-scope]', P.panel).forEach((b) => {
       const k = b.getAttribute('data-scope');
       b.textContent = labels[k];
@@ -177,7 +177,7 @@
 
   function renderStats(rows) {
     const box = $('.uxk-lib-stats', P.panel);
-    if (!rows.length) { box.textContent = 'No courses match the filters.'; return; }
+    if (!rows.length) { box.textContent = UXK.t('No courses match the filters.'); return; }
     const hours = rows.reduce((s, c) => s + (c.hours || 0), 0);
     const notStarted = rows.filter((c) => c.progress === 0);
     const nsHours = notStarted.reduce((s, c) => s + (c.hours || 0), 0);
@@ -188,12 +188,12 @@
     rows.forEach((c) => c.category && cats.set(c.category, (cats.get(c.category) || 0) + 1));
     const topCats = [...cats.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} ${n}`).join(' · ');
     box.innerHTML = [
-      `<b>${UXK.fmtNum(rows.length)}</b> courses`,
-      `<b>${UXK.fmtNum(Math.round(hours))}</b> h total`,
-      `about <b>${UXK.fmtNum(Math.round(remainH))}</b> h left`,
-      `<b>${UXK.fmtNum(notStarted.length)}</b> not started (${UXK.fmtNum(Math.round(nsHours))} h)`,
-      `avg rating <b>${avg.toFixed(2)}</b>`,
-      topCats ? `top categories: ${esc(topCats)}` : '',
+      UXK.t('<b>{0}</b> courses', UXK.fmtNum(rows.length)),
+      UXK.t('<b>{0}</b> h total', UXK.fmtNum(Math.round(hours))),
+      UXK.t('about <b>{0}</b> h left', UXK.fmtNum(Math.round(remainH))),
+      UXK.t('<b>{0}</b> not started ({1} h)', UXK.fmtNum(notStarted.length), UXK.fmtNum(Math.round(nsHours))),
+      UXK.t('avg rating <b>{0}</b>', avg.toFixed(2)),
+      topCats ? UXK.t('top categories: {0}', esc(topCats)) : '',
     ].filter(Boolean).join('<span class="uxk-dot" aria-hidden="true">·</span>');
   }
 
@@ -201,23 +201,23 @@
     const m = P.meta[c.id] || {};
     const tags = (m.tags || []).map((t) => `<span class="uxk-chip">${esc(t)}</span>`).join('');
     const sub = [c.instructors, c.category, c.lang].filter(Boolean).map(esc).join(' · ');
-    const flags = [c.favorite ? '<span class="uxk-chip uxk-chip-fav" title="Udemy favorite">Favorite</span>' : '', c.archived ? '<span class="uxk-chip uxk-chip-arc">Archived</span>' : ''].join('');
+    const flags = [c.favorite ? `<span class="uxk-chip uxk-chip-fav" title="${UXK.t('Udemy favorite')}">${UXK.t('Favorite')}</span>` : '', c.archived ? `<span class="uxk-chip uxk-chip-arc">${UXK.t('Archived')}</span>` : ''].join('');
     const prog = Math.min(100, c.progress || 0);
     return `<tr data-id="${Number(c.id)}">
-      <td class="uxk-c"><input type="checkbox" class="uxk-sel" aria-label="Select ${esc(c.title)}" title="Shift+click another row to select the whole range" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
+      <td class="uxk-c"><input type="checkbox" class="uxk-sel" aria-label="${UXK.t('Select {0}', esc(c.title))}" title="${UXK.t('Shift+click another row to select the whole range')}" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
       <td class="uxk-title"><a href="/course-dashboard-redirect/?course_id=${Number(c.id)}" target="_blank" rel="noopener">${esc(c.title)}</a>
-        <div class="uxk-sub">${sub}${flags}${tags}${m.memo ? `<span class="uxk-memo" title="${esc(m.memo)}">Note</span>` : ''}</div></td>
+        <div class="uxk-sub">${sub}${flags}${tags}${m.memo ? `<span class="uxk-memo" title="${esc(m.memo)}">${UXK.t('Note')}</span>` : ''}</div></td>
       <td class="uxk-n">${c.rating ? c.rating.toFixed(2) : '-'}</td>
       <td class="uxk-n">${c.reviews ? UXK.lib.bayes(c, P.mean).toFixed(2) : '-'}</td>
       <td class="uxk-n">${UXK.fmtNum(c.reviews)}</td>
       <td class="uxk-n">${esc(c.updated || '-')}</td>
-      <td class="uxk-n">${c.hours ? c.hours.toFixed(1) + 'h' : '-'}</td>
+      <td class="uxk-n">${c.hours ? UXK.t('{0}h', c.hours.toFixed(1)) : '-'}</td>
       <td class="uxk-n">${UXK.fmtCompact(c.subs)}</td>
       <td class="uxk-n"><span class="uxk-bar" aria-hidden="true"><i data-w="${prog}"></i></span>${prog}%</td>
       <td class="uxk-n">${esc(c.enrolled || '-')}</td>
       <td class="uxk-n">${esc(c.accessed || '-')}</td>
-      <td class="uxk-c"><button class="uxk-icon ${m.queue ? 'uxk-on' : ''}" data-row="queue" aria-pressed="${m.queue ? 'true' : 'false'}" aria-label="Study queue: ${esc(c.title)}" title="Add to / remove from queue">${m.queue ? '★' : '☆'}</button>
-        <button class="uxk-icon" data-row="edit" aria-label="Edit tags and notes: ${esc(c.title)}" title="Edit tags & notes">✎</button></td>
+      <td class="uxk-c"><button class="uxk-icon ${m.queue ? 'uxk-on' : ''}" data-row="queue" aria-pressed="${m.queue ? 'true' : 'false'}" aria-label="${UXK.t('Study queue: {0}', esc(c.title))}" title="${UXK.t('Add to / remove from queue')}">${m.queue ? '★' : '☆'}</button>
+        <button class="uxk-icon" data-row="edit" aria-label="${UXK.t('Edit tags and notes: {0}', esc(c.title))}" title="${UXK.t('Edit tags & notes')}">✎</button></td>
     </tr>`;
   }
 
@@ -229,26 +229,27 @@
   function render() {
     if (!P.panel) return;
     renderScopeButtons();
-    if (!P.cache) { setStatus(P.loadingProgress ? 'Loading...' : 'No data. Press "Refresh data".'); $('.uxk-lib-list', P.panel).textContent = ''; return; }
+    if (!P.cache) { setStatus(P.loadingProgress ? 'Loading...' : 'No data. Press "Refresh data".'); // setStatus가 번역한다
+     $('.uxk-lib-list', P.panel).textContent = ''; return; }
     const rows = P.currentRows();
     renderStats(rows);
     const slice = rows.slice(0, P.state.shown);
     const arrow = (k) => (P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? ' ▲' : ' ▼') : '');
     const allChecked = slice.length > 0 && slice.every((c) => P.state.selected.has(c.id));
     const thead = COLS.map(([k, t], i) => (i === 0
-      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" aria-label="Select all shown courses" ${allChecked ? 'checked' : ''} title="Select / deselect the ${slice.length} courses shown. Tip: Shift+click a row checkbox to select a range"></th>`
-      : `<th ${k ? `data-k="${k}" tabindex="0" aria-sort="${P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}"` : ''}>${t}${arrow(k)}</th>`)).join('');
+      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" aria-label="${UXK.t('Select all shown courses')}" ${allChecked ? 'checked' : ''} title="${UXK.t('Select / deselect the {0} courses shown. Tip: Shift+click a row checkbox to select a range', slice.length)}"></th>`
+      : `<th ${k ? `data-k="${k}" tabindex="0" aria-sort="${P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}"` : ''}>${UXK.t(t)}${arrow(k)}</th>`)).join('');
     // 표를 새로 그리면 초점이 있던 머리글·전체 선택 칸이 사라지므로, 새로 그린 뒤 같은 칸으로 초점을 돌려준다
     const act = document.activeElement;
     const focusKey = act && P.panel.contains(act) ? (act.classList.contains('uxk-all') ? 'all' : act.closest('th[data-k]') ? act.closest('th[data-k]').getAttribute('data-k') : null) : null;
-    $('.uxk-lib-list', P.panel).innerHTML = `<table aria-label="Your courses"><thead><tr>${thead}</tr></thead><tbody>${slice.map(rowHtml).join('')}</tbody></table>` +
-      (rows.length > P.state.shown ? `<button class="uxk-btn uxk-more" data-act="more">Show more (${UXK.fmtNum(P.state.shown)} / ${UXK.fmtNum(rows.length)})</button>` : '');
+    $('.uxk-lib-list', P.panel).innerHTML = `<table aria-label="${UXK.t('Your courses')}"><thead><tr>${thead}</tr></thead><tbody>${slice.map(rowHtml).join('')}</tbody></table>` +
+      (rows.length > P.state.shown ? `<button class="uxk-btn uxk-more" data-act="more">${UXK.t('Show more ({0} / {1})', UXK.fmtNum(P.state.shown), UXK.fmtNum(rows.length))}</button>` : '');
     if (focusKey) { const again = focusKey === 'all' ? $('.uxk-all', P.panel) : $(`th[data-k="${focusKey}"]`, P.panel); if (again) again.focus(); }
     // CSP가 인라인 style 속성을 막을 수 있어 CSSOM으로 너비 지정
     $$('.uxk-bar i[data-w]', P.panel).forEach((n) => { n.style.width = n.getAttribute('data-w') + '%'; });
     const age = P.cache.t ? Math.round((Date.now() - P.cache.t) / 60000) : 0;
-    setStatus(`${UXK.fmtNum(rows.length)} matches · data as of ${new Date(P.cache.t).toLocaleString('en-US')} (${age < 60 ? age + ' min' : Math.round(age / 60) + ' h'} ago)` +
-      (P.cache.fields && !P.cache.fields.includes('primary_category') ? ' · category/language/caption fields are not supported by this account\'s API' : ''));
+    setStatus(UXK.t('{0} matches · data as of {1} ({2} ago)', UXK.fmtNum(rows.length), new Date(P.cache.t).toLocaleString(UXK.i18n.locale()), age < 60 ? UXK.t('{0} min', age) : UXK.t('{0} h', Math.round(age / 60))) +
+      (P.cache.fields && !P.cache.fields.includes('primary_category') ? UXK.t(" · category/language/caption fields are not supported by this account's API") : ''));
     updateBulk();
     P.saveViewSoon(); // 탭·필터·정렬이 바뀌었으면 다음에 열 때 그대로 보이게 저장
   }
@@ -264,26 +265,26 @@
     b.textContent = '';
     b.hidden = !allShown;
     if (!allShown) return;
-    if (rows.every(has)) b.append(`All ${UXK.fmtNum(rows.length)} matching courses are selected.`);
-    else b.append(el('span', { text: `All ${UXK.fmtNum(shown.length)} shown courses are selected. ` }), el('button', { class: 'uxk-btn uxk-btn-ghost', 'data-act': 'sel-all-matches', text: `Select all ${UXK.fmtNum(rows.length)} matching courses` }));
+    if (rows.every(has)) b.append(UXK.t('All {0} matching courses are selected.', UXK.fmtNum(rows.length)));
+    else b.append(el('span', { text: UXK.t('All {0} shown courses are selected. ', UXK.fmtNum(shown.length)) }), el('button', { class: 'uxk-btn uxk-btn-ghost', 'data-act': 'sel-all-matches', text: UXK.t('Select all {0} matching courses', UXK.fmtNum(rows.length)) }));
   }
 
   function updateBulk() {
     const n = P.state.selected.size;
     const c = $('.uxk-bulk-count', P.panel);
-    if (c) c.textContent = `${UXK.fmtNum(n)} selected`;
+    if (c) c.textContent = UXK.t('{0} selected', UXK.fmtNum(n));
     updateBanner();
     // 내보내기 단추: 고른 강의가 있으면 그것만 내보낸다는 것을 글자로 보인다
     const nExp = P.exportCount();
-    [['csv', 'CSV (Notion)', 'CSV'], ['md', 'Markdown checklist', 'Markdown'], ['json', 'JSON', 'JSON']].forEach(([act, base, sel]) => {
+    [['csv', 'CSV (Notion)', 'CSV · {0} selected'], ['md', 'Markdown checklist', 'Markdown · {0} selected'], ['json', 'JSON', 'JSON · {0} selected']].forEach(([act, base, sel]) => {
       const b = $(`[data-act="${act}"]`, P.panel);
-      if (b) { b.textContent = nExp ? `${sel} · ${UXK.fmtNum(nExp)} selected` : base; b.title = nExp ? 'Only the selected courses are exported' : 'All courses in the current filtered and sorted results'; }
+      if (b) { b.textContent = nExp ? UXK.t(sel, UXK.fmtNum(nExp)) : UXK.t(base); b.title = UXK.t(nExp ? 'Only the selected courses are exported' : 'All courses in the current filtered and sorted results'); }
     });
     const selData = [...P.state.selected].map((id) => P.byId.get(id)).filter(Boolean);
     const nActive = selData.filter((x) => !x.archived).length, nArch = selData.length - nActive;
     const set = (act, dis, label) => { const b = $(`[data-act="${act}"]`, P.panel); if (b) { b.disabled = P.state.busy || dis; if (label) b.textContent = label; } };
-    set('archive', !nActive, `Archive (${nActive})`);
-    set('unarchive', !nArch, `Unarchive (${nArch})`);
+    set('archive', !nActive, UXK.t('Archive ({0})', nActive));
+    set('unarchive', !nArch, UXK.t('Unarchive ({0})', nArch));
     ['tag-add', 'tag-del', 'queue-add', 'queue-del', 'sel-clear'].forEach((a) => set(a, !n));
   }
 

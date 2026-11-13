@@ -7,11 +7,12 @@
   $('#ver').textContent = 'v' + chrome.runtime.getManifest().version;
 
   let S = await UXK.getSettings();
+  UXK.i18n.initPage(S);
   const getPath = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
   const build = (path, val) => path.split('.').reduceRight((acc, k) => ({ [k]: acc }), val);
   const savedEl = $('#saved');
   let savedT = null;
-  const flash = (msg = 'Saved') => { savedEl.textContent = msg; savedEl.classList.add('show'); clearTimeout(savedT); savedT = setTimeout(() => savedEl.classList.remove('show'), 1000); };
+  const flash = (msg = 'Saved') => { savedEl.textContent = UXK.t(msg); savedEl.classList.add('show'); clearTimeout(savedT); savedT = setTimeout(() => savedEl.classList.remove('show'), 1000); };
 
   // ---------------- 일반 설정 바인딩 ----------------
   let mtGranted = true; // 이 PC에 번역 권한이 있는지 (없으면 설정값과 상관없이 꺼진 것으로 표시)
@@ -42,6 +43,7 @@
     } else v = n.value;
     S = await UXK.saveSettings(build(k, v));
     flash();
+    if (k === 'ui.lang') setTimeout(() => location.reload(), 400); // 언어를 바꾸면 이 페이지를 새로 그린다
   }
   $$('[data-k]').forEach((n) => {
     if (n.type === 'range') n.addEventListener('input', updateRangeLabels);
@@ -75,7 +77,7 @@
     body.innerHTML = '';
     Object.keys(UXK.DEFAULTS.hotkeys).forEach((action) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${esc(UXK.ACTION_LABELS[action] || action)}</td><td><input type="text" readonly class="hk" data-hk="${action}" aria-label="${esc(UXK.ACTION_LABELS[action] || action)} hotkey"></td><td class="warn" data-warn="${action}"></td>`;
+      tr.innerHTML = `<td>${esc(UXK.t(UXK.ACTION_LABELS[action] || action))}</td><td><input type="text" readonly class="hk" data-hk="${action}" aria-label="${esc(UXK.t('{0} hotkey', UXK.t(UXK.ACTION_LABELS[action] || action)))}"></td><td class="warn" data-warn="${action}"></td>`;
       body.appendChild(tr);
     });
     refreshHotkeys();
@@ -88,13 +90,13 @@
     $$('[data-hk]').forEach((inp) => {
       const a = inp.dataset.hk;
       const v = S.hotkeys[a];
-      inp.value = v || '(none)';
+      inp.value = v || UXK.t('(none)');
       const k = norm(v);
       const warn = $(`[data-warn="${a}"]`);
       warn.textContent = !k ? '' : RESERVED.has(k) ? 'Clashes with a Udemy key' : counts.get(k) > 1 ? 'Clashes with another action' : '';
     });
   }
-  document.addEventListener('focusin', (e) => { if (e.target.matches('[data-hk]')) { e.target.classList.add('listening'); e.target.value = 'Press a key'; } });
+  document.addEventListener('focusin', (e) => { if (e.target.matches('[data-hk]')) { e.target.classList.add('listening'); e.target.value = UXK.t('Press a key'); } });
   document.addEventListener('focusout', (e) => { if (e.target.matches('[data-hk]')) { e.target.classList.remove('listening'); refreshHotkeys(); } });
   document.addEventListener('keydown', async (e) => {
     const inp = e.target;
@@ -107,7 +109,7 @@
     else {
       if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
       v = UXK.eventToHotkey(e);
-      if (!v) { inp.value = 'Unsupported key'; return; }
+      if (!v) { inp.value = UXK.t('Unsupported key'); return; }
     }
     S = await UXK.saveSettings({ hotkeys: { [inp.dataset.hk]: v } });
     flash();
@@ -124,9 +126,9 @@
   const courseById = new Map();
   caches.forEach((c) => (c.data || []).forEach((x) => { if (!courseById.has(String(x.id))) courseById.set(String(x.id), { ...x, host: c.host }); }));
   $('#lib-cache').textContent = caches.length
-    ? 'Course-list cache: ' + caches.map((c) => `${c.host} ${UXK.fmtNum((c.data || []).length)} courses (as of ${new Date(c.t).toLocaleString('en-US')})`).join(' · ')
+    ? UXK.t('Course-list cache: {0}', caches.map((c) => UXK.t('{0} {1} courses (as of {2})', c.host, UXK.fmtNum((c.data || []).length), new Date(c.t).toLocaleString(UXK.i18n.locale()))).join(' · '))
     : 'No course-list cache (created when you open My Learning)';
-  const titleOf = (id) => (courseById.get(String(id)) || {}).title || `Course ${id}`;
+  const titleOf = (id) => (courseById.get(String(id)) || {}).title || UXK.t('Course {0}', id);
   const lectureLink = (courseId, lectureId, t) => {
     const c = courseById.get(String(courseId));
     const host = (c && c.host) || 'www.udemy.com';
@@ -147,27 +149,27 @@
     while (i < 3650 && meets(dayKey(i))) { streak++; i++; } // 잘못된 목표값이 와도 끝나도록 10년 상한
     const today = secOf(dayKey(0));
     $('#kpis').innerHTML = [
-      ['Today', `${Math.round(today / 60)} min${goal ? ` / ${S.stats.dailyGoalMin} min` : ''}`],
+      ['Today', UXK.t('{0} min', Math.round(today / 60)) + (goal ? ' / ' + UXK.t('{0} min', S.stats.dailyGoalMin) : '')],
       ['Last 7 days', UXK.fmtDur(sum(7))],
       ['Last 30 days', UXK.fmtDur(sum(30))],
-      ['Goal streak', `${streak} days`],
+      ['Goal streak', UXK.t('{0} days', streak)],
     ].map(([a, b]) => `<div class="kpi"><span class="muted">${a}</span><b>${b}</b></div>`).join('');
     const N = 14;
     const vals = Array.from({ length: N }, (_, k) => secOf(dayKey(N - 1 - k)));
     const max = Math.max(goal, ...vals, 60);
-    $('#bars').innerHTML = vals.map((v) => `<div class="b ${goal && v >= goal ? 'goal' : ''}" style="height:${Math.max(2, (v / max) * 100)}%" title="${Math.round(v / 60)} min"></div>`).join('');
+    $('#bars').innerHTML = vals.map((v) => `<div class="b ${goal && v >= goal ? 'goal' : ''}" style="height:${Math.max(2, (v / max) * 100)}%" title="${UXK.t('{0} min', Math.round(v / 60))}"></div>`).join('');
     $('#bars-labels').innerHTML = Array.from({ length: N }, (_, k) => `<span>${dayKey(N - 1 - k).slice(5)}</span>`).join('');
     const per = new Map();
     for (let k = 0; k < 7; k++) { const d = days[dayKey(k)]; if (d && d.courses) Object.entries(d.courses).forEach(([id, s]) => per.set(id, (per.get(id) || 0) + s)); }
     const rows = [...per.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
-    $('#stat-courses').innerHTML = rows.length ? rows.map(([id, s]) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${UXK.fmtDur(s)}</td></tr>`).join('') : '<tr><td colspan="2" class="muted">No records</td></tr>';
+    $('#stat-courses').innerHTML = rows.length ? rows.map(([id, s]) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${UXK.fmtDur(s)}</td></tr>`).join('') : `<tr><td colspan="2" class="muted">${UXK.t('No records')}</td></tr>`;
     $('#stats-csv').onclick = () => {
       const lines = ['date,minutes'];
       Object.keys(days).sort().forEach((k) => lines.push(`${k},${Math.round(days[k].sec / 60)}`));
       UXK.download(`udemy-study-${UXK.today()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
     };
   }
-  $('#stats-clear').onclick = async () => { if (confirm('Clear all study stats?')) { await UXK.local.set(UXK.KEYS.stats, { days: {} }); renderStats(); } };
+  $('#stats-clear').onclick = async () => { if (confirm(UXK.t('Clear all study stats?'))) { await UXK.local.set(UXK.KEYS.stats, { days: {} }); renderStats(); } };
   renderStats();
 
   // ---------------- 문장 수집함 ----------------
@@ -181,8 +183,8 @@
     const list = filteredSentences();
     $('#sent-body').innerHTML = list.slice(0, 500).map((s) => `<tr><td><input type="checkbox" data-sid="${esc(s.id)}" ${selected.has(s.id) ? 'checked' : ''}></td>
       <td>${esc(s.text)}${s.trans ? `<div class="muted">${esc(s.trans)}</div>` : ''}</td>
-      <td class="muted"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.lectureTitle || '')} · ${UXK.fmtClock(s.t)}</a><br>${esc(s.courseTitle || '')}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No saved sentences</td></tr>';
-    $('#sent-count').textContent = `${sentences.length} total${list.length !== sentences.length ? ` · ${list.length} match the search` : ''}${list.length > 500 ? ' · only the latest 500 are shown (exports include all)' : ''}`;
+      <td class="muted"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.lectureTitle || '')} · ${UXK.fmtClock(s.t)}</a><br>${esc(s.courseTitle || '')}</td></tr>`).join('') || `<tr><td colspan="3" class="muted">${UXK.t('No saved sentences')}</td></tr>`;
+    $('#sent-count').textContent = UXK.t('{0} total', sentences.length) + (list.length !== sentences.length ? UXK.t(' · {0} match the search', list.length) : '') + (list.length > 500 ? UXK.t(' · only the latest 500 are shown (exports include all)') : '');
   }
   $('#sent-q').addEventListener('input', renderSentences);
   $('#sent-body').addEventListener('change', (e) => { const id = e.target.dataset.sid; if (!id) return; e.target.checked ? selected.add(id) : selected.delete(id); });
@@ -196,13 +198,13 @@
   };
   $('#sent-csv').onclick = () => {
     const q = UXK.csvCell;
-    const lines = ['Sentence,Translation,Course,Lecture,Time,Link,Saved on'];
+    const lines = [['Sentence', 'Translation', 'Course', 'Lecture', 'Time', 'Link', 'Saved on'].map((h) => UXK.t(h)).join(',')];
     filteredSentences().reverse().forEach((s) => lines.push([q(s.text), q(s.trans), q(s.courseTitle), q(s.lectureTitle), q(UXK.fmtClock(s.t)), q(s.url), q(s.created)].join(',')));
     UXK.download(`udemy-sentences-${UXK.today()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
   };
   $('#sent-del').onclick = async () => {
     if (!selected.size) return flash('No sentences selected');
-    if (!confirm(`Delete ${selected.size} sentences?`)) return;
+    if (!confirm(UXK.t('Delete {0} sentences?', selected.size))) return;
     sentences = await UXK.local.update(UXK.KEYS.sentences, (arr) => (arr || []).filter((s) => !selected.has(s.id)), []);
     selected.clear();
     renderSentences();
@@ -213,7 +215,7 @@
   async function renderNotes() {
     const all = (await UXK.local.get(UXK.KEYS.notes, {})) || {};
     const ids = Object.keys(all).filter((k) => all[k] && all[k].length);
-    $('#notes-body').innerHTML = ids.length ? ids.map((id) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${all[id].length}</td><td><button data-note-md="${esc(id)}">Markdown</button></td></tr>`).join('') : '<tr><td colspan="3" class="muted">No notes</td></tr>';
+    $('#notes-body').innerHTML = ids.length ? ids.map((id) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${all[id].length}</td><td><button data-note-md="${esc(id)}">Markdown</button></td></tr>`).join('') : `<tr><td colspan="3" class="muted">${UXK.t('No notes')}</td></tr>`;
     return all;
   }
   const notesMd = (all, ids) => {
@@ -257,26 +259,26 @@
     if (!f) return;
     try {
       const j = JSON.parse(await f.text());
-      if (!j || j.app !== 'udemy-toolkit-kr') throw new Error('This is not a backup file from this extension');
+      if (!j || j.app !== 'udemy-toolkit-kr') throw new Error(UXK.t('This is not a backup file from this extension'));
       const data = j.data || {};
       // 쓰기 전에 전부 검사: 잘못된 파일이 저장소를 일부만 덮어쓰지 않게
-      for (const k of BACKUP_KEYS) if (data[k] != null && !hasShape(k, data[k])) throw new Error(`The "${k}" entry in the backup file has an invalid format`);
-      if (!confirm('This overwrites your current data with the backup. Continue?')) return;
-      for (const k of BACKUP_KEYS) if (data[k] != null && !(await UXK.local.set(UXK.KEYS[k], data[k]))) throw new Error(`Could not save "${k}"`);
+      for (const k of BACKUP_KEYS) if (data[k] != null && !hasShape(k, data[k])) throw new Error(UXK.t('The "{0}" entry in the backup file has an invalid format', k));
+      if (!confirm(UXK.t('This overwrites your current data with the backup. Continue?'))) return;
+      for (const k of BACKUP_KEYS) if (data[k] != null && !(await UXK.local.set(UXK.KEYS[k], data[k]))) throw new Error(UXK.t('Could not save "{0}"', k));
       if (j.settings) S = await UXK.saveSettings(j.settings); // 기본값과 모양·자료형이 다른 값은 saveSettings가 걸러낸다
       flash('Restore complete');
       setTimeout(() => location.reload(), 600);
-    } catch (err) { alert('Restore failed: ' + err.message); } finally { e.target.value = ''; } // 같은 파일을 다시 골라도 change가 일어나게
+    } catch (err) { alert(UXK.t('Restore failed: {0}', err.message)); } finally { e.target.value = ''; } // 같은 파일을 다시 골라도 change가 일어나게
   });
   $('#clear-cache').onclick = async () => {
     const all = await chrome.storage.local.get(null);
     const keys = Object.keys(all).filter((k) => k.startsWith(UXK.KEYS.coursesPrefix) || k.startsWith('uxk_fields_ok') || k.startsWith('uxk_refresh_fail') || k.startsWith('uxk_cur_'));
     await chrome.storage.local.remove(keys);
-    flash(`${keys.length} cache entries deleted`);
+    flash(UXK.t('{0} cache entries deleted', keys.length));
     $('#lib-cache').textContent = 'No course-list cache (created when you open My Learning)';
   };
   $('#reset-settings').onclick = async () => {
-    if (!confirm('Reset all settings to defaults? (Notes, sentences and stats are kept)')) return;
+    if (!confirm(UXK.t('Reset all settings to defaults? (Notes, sentences and stats are kept)'))) return;
     await chrome.storage.sync.remove('uxk_settings');
     location.reload();
   };

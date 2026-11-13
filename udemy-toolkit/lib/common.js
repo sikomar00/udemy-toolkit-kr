@@ -73,6 +73,7 @@
     },
     ui: {
       darkMode: false,
+      lang: 'auto', // auto(브라우저 표시 언어를 따름) / en / ko
     },
   };
 
@@ -261,20 +262,25 @@
     };
   };
   UXK.clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  // 화면 글자는 el()을 거치며 번역된다 (사전에 없거나 영어 설정이면 그대로)
+  const tr = (s) => (UXK.t && typeof s === 'string' ? UXK.t(s) : s);
+  const TR_ATTRS = new Set(['title', 'placeholder', 'aria-label', 'alt']);
+  // 'data-no-i18n': true 를 주면 그 요소의 글자는 번역하지 않는다 (강의 제목·프리셋 이름 같은 사용자 글용)
   UXK.el = function (tag, attrs = {}, children = []) {
     const n = document.createElement(tag);
+    const T = attrs && attrs['data-no-i18n'] ? (s) => s : tr;
     for (const [k, v] of Object.entries(attrs || {})) {
       if (v == null || v === false) continue;
       if (k === 'class') n.className = v;
-      else if (k === 'text') n.textContent = v;
+      else if (k === 'text') n.textContent = T(v);
       else if (k === 'html') n.innerHTML = v;
       else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2), v);
       else if (k === 'style' && typeof v === 'object') Object.assign(n.style, v);
-      else n.setAttribute(k, v === true ? '' : v);
+      else n.setAttribute(k, v === true ? '' : (TR_ATTRS.has(k) ? T(v) : v));
     }
     (Array.isArray(children) ? children : [children]).forEach((c) => {
       if (c == null || c === false) return;
-      n.append(c instanceof Node ? c : document.createTextNode(String(c)));
+      n.append(c instanceof Node ? c : document.createTextNode(T(String(c))));
     });
     return n;
   };
@@ -288,16 +294,23 @@
   UXK.fmtDur = function (sec) {
     sec = Math.max(0, Math.round(sec || 0));
     const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
-    if (h && m === 60) return `${h + 1}h`;
-    if (h) return m ? `${h}h ${m}m` : `${h}h`;
-    return `${m}m`;
+    const ko = UXK.i18n && UXK.i18n.lang() === 'ko';
+    if (h && m === 60) return ko ? `${h + 1}시간` : `${h + 1}h`;
+    if (h) return ko ? (m ? `${h}시간 ${m}분` : `${h}시간`) : (m ? `${h}h ${m}m` : `${h}h`);
+    return ko ? `${m}분` : `${m}m`;
   };
-  UXK.fmtNum = (n) => (n == null ? '-' : Number(n).toLocaleString('en-US'));
+  const loc = () => (UXK.i18n ? UXK.i18n.locale() : 'en-US');
+  UXK.fmtNum = (n) => (n == null ? '-' : Number(n).toLocaleString(loc()));
   UXK.fmtCompact = function (n) {
     if (n == null) return '-';
-    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
-    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
-    return Number(n).toLocaleString('en-US');
+    if (UXK.i18n && UXK.i18n.lang() === 'ko') {
+      if (n >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, '') + '억';
+      if (n >= 1e4) return (n / 1e4).toFixed(1).replace(/\.0$/, '') + '만';
+    } else {
+      if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+      if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    return Number(n).toLocaleString(loc());
   };
   UXK.today = function (d = new Date()) {
     const p = (x) => String(x).padStart(2, '0');

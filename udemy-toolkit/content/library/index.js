@@ -19,7 +19,7 @@
     const title = P.panel.querySelector('#uxk-lib-title');
     if (title) title.focus(); // 키보드·스크린리더 사용자가 패널 안에서 시작하도록 제목으로 초점을 옮긴다
     if (!P.cache || UXK.lib.isStale(P.cache, P.S.library.autoRefreshHours)) {
-      try { await P.ensureData(!P.cache ? false : true); P.fillOptions(); P.render(); P.processCards(); } catch (err) { P.setStatus('Load failed: ' + err.message + ' (check that you are signed in)'); }
+      try { await P.ensureData(!P.cache ? false : true); P.fillOptions(); P.render(); P.processCards(); } catch (err) { P.setStatus(UXK.t('Load failed: {0} (check that you are signed in)', UXK.t(err.message))); }
     }
   }
   function closePanel() {

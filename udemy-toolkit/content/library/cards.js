@@ -36,10 +36,10 @@
       box.className = 'uxk-card-badges ' + ratingClass(c.rating);
       box.innerHTML = [
         c.rating ? `<b class="uxk-rate">★${c.rating.toFixed(1)}</b> <span>(${UXK.fmtCompact(c.reviews)})</span>` : '',
-        c.hours ? `<span>${c.hours.toFixed(1)}h</span>` : '',
-        c.updated ? `<span>Updated ${esc(c.updated.slice(0, 7))}</span>` : '',
-        c.subs ? `<span>${UXK.fmtCompact(c.subs)} students</span>` : '',
-        m.queue ? '<span class="uxk-chip uxk-chip-q">Queue</span>' : '',
+        c.hours ? `<span>${UXK.t('{0}h', c.hours.toFixed(1))}</span>` : '',
+        c.updated ? `<span>${UXK.t('Updated {0}', esc(c.updated.slice(0, 7)))}</span>` : '',
+        c.subs ? `<span>${UXK.t('{0} students', UXK.fmtCompact(c.subs))}</span>` : '',
+        m.queue ? `<span class="uxk-chip uxk-chip-q">${UXK.t('Queue')}</span>` : '',
         ...(m.tags || []).map((t) => `<span class="uxk-chip">${esc(t)}</span>`),
       ].filter(Boolean).join(' ');
     });
@@ -92,7 +92,7 @@
   }
   async function archiveWithoutReload(id) {
     const c = P.byId.get(id);
-    const name = c ? `"${c.title.slice(0, 40)}"` : `Course ${id}`;
+    const name = c ? `"${c.title.slice(0, 40)}"` : UXK.t('Course {0}', id);
     try {
       await UXK.api.archive(id);
       hideNativeCard(id, true);

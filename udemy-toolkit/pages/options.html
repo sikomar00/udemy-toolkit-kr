@@ -10,10 +10,15 @@
 <div class="wrap">
   <header class="top"><h1>Toolkit for Udemy</h1><span class="muted" id="ver"></span><span class="grow"></span><span class="muted">Changes are saved immediately and applied to open Udemy tabs.</span></header>
   <nav aria-label="Settings sections">
-    <a href="#play">Playback</a><a href="#keys">Hotkeys</a><a href="#subs">Subtitles &amp; language learning</a><a href="#lib">My Learning &amp; search</a>
+    <a href="#general">General</a><a href="#play">Playback</a><a href="#keys">Hotkeys</a><a href="#subs">Subtitles &amp; language learning</a><a href="#lib">My Learning &amp; search</a>
     <a href="#stats">Study stats</a><a href="#sent">Saved sentences</a><a href="#notes">Notes</a><a href="#data">Backup &amp; reset</a>
   </nav>
   <main>
+    <section class="card" id="general">
+      <h2>General</h2>
+      <label class="opt"><span>Language<span class="desc">Used for the toolbar, My Course Tools, menus and this page. Reload open Udemy tabs after changing it.</span></span><select data-k="ui.lang"><option value="auto">Auto (browser language)</option><option value="en" data-no-i18n>English</option><option value="ko" data-no-i18n>한국어</option></select></label>
+    </section>
+
     <section class="card" id="play">
       <h2>Playback</h2>
       <label class="opt"><span>Enable speed control</span><input type="checkbox" data-k="speed.enabled"></label>
@@ -77,7 +82,7 @@
       <div class="kpis" id="kpis"></div>
       <div class="bars" id="bars"></div><div class="bars-labels" id="bars-labels"></div>
       <h3 style="font-size:14px">Last 7 days by course</h3>
-      <table><thead><tr><th>Course</th><th class="n">Time</th></tr></thead><tbody id="stat-courses"></tbody></table>
+      <table><thead><tr><th>Course</th><th class="n">Time</th></tr></thead><tbody id="stat-courses" data-no-i18n></tbody></table>
       <div class="row" style="margin-top:10px"><button id="stats-csv">Export CSV</button><span class="grow"></span><button class="danger" id="stats-clear">Clear stats</button></div>
     </section>
 
@@ -85,14 +90,14 @@
       <h2>Saved sentences</h2>
       <p class="muted">Press K in a video to save the current subtitle sentence (primary + secondary). Export as a TSV for Anki import (front, tab, back, tab, source).</p>
       <div class="row"><input type="text" id="sent-q" placeholder="Search" style="flex:1"><button id="sent-anki" class="primary">Anki TSV</button><button id="sent-csv">CSV</button><button class="danger" id="sent-del">Delete selected</button></div>
-      <div class="list-scroll" style="margin-top:8px"><table><thead><tr><th><input type="checkbox" id="sent-all"></th><th>Sentence</th><th>Source</th></tr></thead><tbody id="sent-body"></tbody></table></div>
+      <div class="list-scroll" style="margin-top:8px"><table><thead><tr><th><input type="checkbox" id="sent-all"></th><th>Sentence</th><th>Source</th></tr></thead><tbody id="sent-body" data-no-i18n></tbody></table></div>
       <p class="muted" id="sent-count"></p>
     </section>
 
     <section class="card" id="notes">
       <h2>Notes</h2>
       <p class="muted">Timestamped notes you made with Alt+N in a video. Stored only in this browser.</p>
-      <table><thead><tr><th>Course</th><th class="n">Notes</th><th></th></tr></thead><tbody id="notes-body"></tbody></table>
+      <table><thead><tr><th>Course</th><th class="n">Notes</th><th></th></tr></thead><tbody id="notes-body" data-no-i18n></tbody></table>
       <div class="row" style="margin-top:10px"><button id="notes-all" class="primary">Export all as Markdown</button></div>
     </section>
 
@@ -106,6 +111,8 @@
 </div>
 <div class="saved" id="saved" role="status">Saved</div>
 <script src="../lib/common.js"></script>
+<script src="../lib/i18n.js"></script>
+<script src="../lib/ko.js"></script>
 <script src="options.js"></script>
 </body>
 </html>

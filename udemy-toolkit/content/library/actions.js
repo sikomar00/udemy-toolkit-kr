@@ -37,7 +37,7 @@
     const a = act.getAttribute('data-act');
     switch (a) {
       case 'close': P.closePanel(); break;
-      case 'refresh': if (P.state.busy) { P.setStatus('Cannot refresh during a bulk action'); break; } try { await P.ensureData(true); P.fillOptions(); P.render(); P.refreshBadges(); } catch (err) { P.setStatus('Load failed: ' + err.message + ' (check that you are signed in)'); } break;
+      case 'refresh': if (P.state.busy) { P.setStatus('Cannot refresh during a bulk action'); break; } try { await P.ensureData(true); P.fillOptions(); P.render(); P.refreshBadges(); } catch (err) { P.setStatus(UXK.t('Load failed: {0} (check that you are signed in)', UXK.t(err.message))); } break;
       case 'apply': P.applyForm(); break;
       case 'reset': P.writeForm(P.DEFAULT_FILTERS()); P.applyForm(); break;
       case 'more': P.state.shown += P.SHOW_STEP; P.render(); break;
@@ -128,7 +128,7 @@
     tagIn.value = (m.tags || []).join(', ');
     const memoIn = el('textarea', { class: 'uxk-input', rows: 4, placeholder: 'Why you take this course, which parts, etc.' });
     memoIn.value = m.memo || '';
-    wrap.append(el('div', { class: 'uxk-hint', text: c ? c.title : '' }), P.control('Tags', tagIn), P.control('Notes', memoIn));
+    wrap.append(el('div', { class: 'uxk-hint', 'data-no-i18n': true, text: c ? c.title : '' }), P.control('Tags', tagIn), P.control('Notes', memoIn));
     const ok = await UXK.ui.modal({ title: 'Tags & notes', body: wrap, buttons: [{ label: 'Cancel', value: false }, { label: 'Save', value: true, primary: true }], closeValue: false });
     if (!ok) return;
     const tags = tagIn.value.split(',').map((s) => s.trim()).filter(Boolean);
@@ -149,9 +149,9 @@
     const sample = ids.slice(0, 5).map((id) => '- ' + P.byId.get(id).title).join('\n');
     const verb = toArchive ? 'Archive' : 'Unarchive';
     const extra = toArchive
-      ? `You can undo this from the Archived tab or Udemy\'s Archived filter. It takes about ${Math.max(1, Math.round((ids.length * 0.6) / 60))} min and can be stopped midway.`
-      : 'Unarchiving uses a request format not yet verified against Udemy. If the first request fails it stops immediately; then unarchive manually on Udemy.';
-    const ok = await UXK.ui.confirm(`${verb} ${ids.length} courses`, `${sample}${ids.length > 5 ? `\n... and ${ids.length - 5} more` : ''}\n\n${extra}`, { okLabel: verb, danger: toArchive });
+      ? UXK.t("You can undo this from the Archived tab or Udemy's Archived filter. It takes about {0} min and can be stopped midway.", Math.max(1, Math.round((ids.length * 0.6) / 60)))
+      : UXK.t('Unarchiving uses a request format not yet verified against Udemy. If the first request fails it stops immediately; then unarchive manually on Udemy.');
+    const ok = await UXK.ui.confirm(UXK.t(toArchive ? 'Archive {0} courses' : 'Unarchive {0} courses', ids.length), `${sample}${ids.length > 5 ? UXK.t('\n... and {0} more', ids.length - 5) : ''}\n\n${extra}`, { okLabel: verb, danger: toArchive });
     if (!ok) return;
     await runBulk(ids, toArchive, false);
   }
@@ -178,7 +178,7 @@
         if (done === 0) {
           progress.close();
           P.state.busy = false; P.updateBulk();
-          P.setStatus(`Stopped because the first request failed: ${err.message}${err.status === 403 ? ' (check security token / sign-in)' : err.status === 404 || err.status === 405 ? ' (request format differs from Udemy)' : ''}`);
+          P.setStatus(UXK.t('Stopped because the first request failed: {0}{1}', err.message, err.status === 403 ? UXK.t(' (check security token / sign-in)') : err.status === 404 || err.status === 405 ? UXK.t(' (request format differs from Udemy)') : ''));
           return;
         }
         if (failed.length >= 5) break;
@@ -191,7 +191,7 @@
     if (P.cache) await UXK.lib.save(P.cache);
     P.render();
     const undo = !isUndo && doneIds.length ? [{ label: `Undo (${doneIds.length})`, onClick: () => { runBulk(doneIds, !toArchive, true).catch((err) => UXK.ui.toast(err && err.message ? err.message : String(err), { kind: 'err', timeout: 7000 })); } }] : [];
-    UXK.ui.toast(`${isUndo ? 'Undo: ' : ''}${stopped ? 'Stopped · ' : ''}${verb} done: ${done}${failed.length ? `, ${failed.length} failed (selection kept)` : ''} · no reload needed`, { timeout: undo.length ? 15000 : 6000, actions: undo });
+    UXK.ui.toast(`${isUndo ? UXK.t('Undo: ') : ''}${stopped ? UXK.t('Stopped · ') : ''}${UXK.t('{0} done: {1}', UXK.t(verb), done)}${failed.length ? UXK.t(', {0} failed (selection kept)', failed.length) : ''}${UXK.t(' · no reload needed')}`, { timeout: undo.length ? 15000 : 6000, actions: undo });
   }
 
   // ---------------- 내보내기 ----------------
@@ -207,7 +207,7 @@
     const rows = exportRows();
     const q = UXK.csvCell;
     const head = ['Title', 'Link', 'Instructor', 'Category', 'Language', 'Captions', 'Rating', 'Bayesian rating', 'Reviews', 'Last updated', 'Hours', 'Students', 'Progress (%)', 'Purchased', 'Last accessed', 'Favorite', 'Archived', 'Tags', 'Queue', 'Notes'];
-    const lines = [head.map(q).join(',')];
+    const lines = [head.map((h) => q(UXK.t(h))).join(',')];
     rows.forEach((c) => {
       const m = P.meta[c.id] || {};
       lines.push([q(c.title), q(linkOf(c)), q(c.instructors), q(c.category), q(c.lang), q(c.captions.join(' / ')),
@@ -219,7 +219,7 @@
   }
   function exportMd() {
     const rows = exportRows();
-    const md = [`# Udemy learning list (${UXK.today()})`, '', ...rows.map((c) => `- [ ] [${c.title.replace(/[[\]]/g, '')}](${linkOf(c)}) — ★${c.rating ? c.rating.toFixed(1) : '-'} · ${c.hours ? c.hours.toFixed(1) + 'h' : '-'} · ${c.progress}% done${(P.meta[c.id] && P.meta[c.id].tags && P.meta[c.id].tags.length) ? ' · #' + P.meta[c.id].tags.join(' #') : ''}`)].join('\n');
+    const md = [UXK.t('# Udemy learning list ({0})', UXK.today()), '', ...rows.map((c) => `- [ ] [${c.title.replace(/[[\]]/g, '')}](${linkOf(c)}) — ★${c.rating ? c.rating.toFixed(1) : '-'} · ${c.hours ? c.hours.toFixed(1) + 'h' : '-'} · ${UXK.t('{0}% done', c.progress)}${(P.meta[c.id] && P.meta[c.id].tags && P.meta[c.id].tags.length) ? ' · #' + P.meta[c.id].tags.join(' #') : ''}`)].join('\n');
     UXK.download(`udemy-checklist-${UXK.today()}.md`, md, 'text/markdown;charset=utf-8');
     UXK.ui.toast(`Markdown saved: ${UXK.fmtNum(rows.length)} lines (paste into Notion for a to-do list)`);
   }
