@@ -20,6 +20,7 @@
     scope: 'active',
     shown: SHOW_STEP,
     selected: new Set(),
+    anchor: null, // 마지막으로 체크박스를 누른 강의 (Shift+클릭 범위 선택의 시작점)
     busy: false,
     filters: null,
     sort: { key: 'bayes', dir: 'desc' },

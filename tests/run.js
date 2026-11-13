@@ -76,6 +76,25 @@ async function libraryTests(page, mock) {
   const stats = await page.$eval('.uxk-lib-stats', (n) => n.textContent);
   check('요약 통계 표시', /250/.test(stats) && /not started/.test(stats), stats.slice(0, 120));
 
+  // Shift+클릭 범위 선택: 체크한 줄부터 Shift를 누르고 누른 줄까지 한꺼번에 같은 상태로
+  const rowBox = (i) => `.uxk-lib tbody tr:nth-child(${i + 1}) .uxk-sel`;
+  const checkedIdx = () => page.$$eval('.uxk-lib tbody tr', (rows) => rows.map((r, i) => (r.querySelector('.uxk-sel').checked ? i : -1)).filter((i) => i >= 0));
+  const bulkText = () => page.$eval('.uxk-bulk-count', (n) => n.textContent);
+  await page.click(rowBox(1));
+  await page.click(rowBox(5), { modifiers: ['Shift'] });
+  const r1 = await checkedIdx(), b1 = await bulkText();
+  check('Shift+클릭: 체크한 줄부터 Shift+클릭한 줄까지 한꺼번에 선택', JSON.stringify(r1) === '[1,2,3,4,5]' && /^5 selected/.test(b1), JSON.stringify(r1) + ' ' + b1);
+  await page.click(rowBox(3), { modifiers: ['Shift'] });
+  const r2 = await checkedIdx();
+  check('Shift+클릭: 누른 줄이 해제되면 그 범위도 한꺼번에 해제', JSON.stringify(r2) === '[1,2]', JSON.stringify(r2));
+  await page.click(rowBox(10));
+  await page.click(rowBox(7), { modifiers: ['Shift'] });
+  const r3 = await checkedIdx(), b3 = await bulkText();
+  check('Shift+클릭: 위쪽으로도 범위 선택, Shift 없이 누르면 한 줄만', JSON.stringify(r3) === '[1,2,7,8,9,10]' && /^6 selected/.test(b3), JSON.stringify(r3) + ' ' + b3);
+  check('Shift+클릭 뒤 일괄 보관 버튼 개수 갱신', /Archive \(6\)/.test(await page.$eval('[data-act="archive"]', (n) => n.textContent)));
+  await page.click('[data-act="sel-clear"]');
+  check('선택 해제 후 0개', (await checkedIdx()).length === 0 && /^0 selected/.test(await bulkText()));
+
   const ratingsOf = () => page.$$eval('.uxk-lib tbody tr', (rows) => rows.map((r) => parseFloat(r.children[2].textContent)));
   await page.fill('input[data-f="minr"]', '4.5');
   const before = await ratingsOf();

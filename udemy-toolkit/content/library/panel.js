@@ -99,6 +99,8 @@
       if (p) { writeForm(p); applyForm(); }
     });
     list.addEventListener('change', P.onListChange);
+    list.addEventListener('click', P.onListClick);
+    list.addEventListener('mousedown', P.onListMouseDown);
   }
 
   function writeForm(f) {
@@ -196,7 +198,7 @@
     const flags = [c.favorite ? '<span class="uxk-chip uxk-chip-fav" title="Udemy favorite">Favorite</span>' : '', c.archived ? '<span class="uxk-chip uxk-chip-arc">Archived</span>' : ''].join('');
     const prog = Math.min(100, c.progress || 0);
     return `<tr data-id="${Number(c.id)}">
-      <td class="uxk-c"><input type="checkbox" class="uxk-sel" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
+      <td class="uxk-c"><input type="checkbox" class="uxk-sel" title="Shift+click another row to select the whole range" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
       <td class="uxk-title"><a href="/course-dashboard-redirect/?course_id=${Number(c.id)}" target="_blank" rel="noopener">${esc(c.title)}</a>
         <div class="uxk-sub">${sub}${flags}${tags}${m.memo ? `<span class="uxk-memo" title="${esc(m.memo)}">Note</span>` : ''}</div></td>
       <td class="uxk-n">${c.rating ? c.rating.toFixed(2) : '-'}</td>
@@ -228,7 +230,7 @@
     const arrow = (k) => (P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? ' ▲' : ' ▼') : '');
     const allChecked = rows.length > 0 && rows.every((c) => P.state.selected.has(c.id));
     const thead = COLS.map(([k, t], i) => (i === 0
-      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" ${allChecked ? 'checked' : ''} title="Select / deselect all ${rows.length} filtered courses (including rows not shown)"></th>`
+      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" ${allChecked ? 'checked' : ''} title="Select / deselect all ${rows.length} filtered courses (including rows not shown). Tip: Shift+click a row checkbox to select a range"></th>`
       : `<th ${k ? `data-k="${k}"` : ''}>${t}${arrow(k)}</th>`)).join('');
     $('.uxk-lib-list', P.panel).innerHTML = `<table><thead><tr>${thead}</tr></thead><tbody>${slice.map(rowHtml).join('')}</tbody></table>` +
       (rows.length > P.state.shown ? `<button class="uxk-btn uxk-more" data-act="more">Show more (${UXK.fmtNum(P.state.shown)} / ${UXK.fmtNum(rows.length)})</button>` : '');

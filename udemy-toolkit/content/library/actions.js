@@ -4,7 +4,7 @@
   const P = UXK.libraryShared;
   if (!P || P.parts.has('actions')) return;
   P.parts.add('actions');
-  const { el, $ } = UXK;
+  const { el, $, $$ } = UXK;
 
   // ---------------- 이벤트 처리 ----------------
   function onPanelClick(e) {
@@ -93,6 +93,29 @@
       t.checked ? P.state.selected.add(id) : P.state.selected.delete(id);
       P.updateBulk();
     }
+  }
+
+  // 체크박스를 누르면 그 줄이 기준점이 되고, Shift를 누른 채 다른 줄의 체크박스를 누르면 기준점부터 그 줄까지(보이는 순서대로) 누른 줄과 같은 상태로 한꺼번에 바뀐다. 기준점이 목록에 없으면 한 줄만 바뀐다
+  function onListClick(e) {
+    const t = e.target;
+    if (!t.classList || !t.classList.contains('uxk-sel')) return;
+    const id = +t.closest('tr').getAttribute('data-id');
+    const from = P.state.anchor;
+    P.state.anchor = id;
+    if (!e.shiftKey || from == null || from === id) return;
+    const ids = P.currentRows().map((c) => c.id);
+    const a = ids.indexOf(from), b = ids.indexOf(id);
+    if (a < 0 || b < 0) return;
+    const range = new Set(ids.slice(Math.min(a, b), Math.max(a, b) + 1));
+    range.forEach((rid) => (t.checked ? P.state.selected.add(rid) : P.state.selected.delete(rid)));
+    $$('tbody tr[data-id]', P.panel).forEach((tr) => { if (range.has(+tr.getAttribute('data-id'))) tr.querySelector('.uxk-sel').checked = t.checked; });
+    const all = $('.uxk-all', P.panel);
+    if (all) all.checked = ids.length > 0 && ids.every((rid) => P.state.selected.has(rid));
+    P.updateBulk();
+  }
+  // Shift+클릭이 글자 범위 선택(파란 칠)으로 번지지 않게 막는다
+  function onListMouseDown(e) {
+    if (e.shiftKey && e.target.classList && e.target.classList.contains('uxk-sel')) e.preventDefault();
   }
 
   async function editMeta(id) {
@@ -190,5 +213,5 @@
     UXK.download(`udemy-courses-${UXK.today()}.json`, JSON.stringify(rows, null, 2), 'application/json');
   }
 
-  Object.assign(P, { onPanelClick, onListChange });
+  Object.assign(P, { onPanelClick, onListChange, onListClick, onListMouseDown });
 })();
