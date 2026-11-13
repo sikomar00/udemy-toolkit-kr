@@ -3,6 +3,28 @@
 Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지를 강화하는 개인용 크롬 확장 프로그램(Manifest V3)입니다.
 빌드 과정이 없는 순수 JavaScript 구현입니다.
 
+## 스크린샷
+
+아래 그림은 테스트용 **모의 Udemy 페이지**에서 찍은 것입니다(실제 강의 영상·계정 정보는 들어 있지 않습니다). 영상은 테스트 패턴이고, 자막 문장도 테스트 문구입니다.
+
+**영상 아래 도구 막대와 이중 자막** — 영상 · 자막(원문+번역) · 도구 막대 순서로 붙습니다. Dual Subs·Loop·Wide는 한 번 클릭으로 켜고 끄며, 켜진 것은 색으로 표시됩니다.
+
+![영상 아래 도구 막대와 이중 자막](docs/images/player.png)
+
+**My Course Tools** — 내 학습 페이지에서 정렬·필터·태그·학습 큐·일괄 보관·내보내기를 합니다.
+
+![My Course Tools 패널](docs/images/my-course-tools.png)
+
+| Subtitles 메뉴 | 툴바 팝업 |
+|---|---|
+| ![Subtitles 메뉴](docs/images/subtitles-menu.png) | ![툴바 팝업](docs/images/popup.png) |
+
+**설정 페이지**
+
+![설정 페이지](docs/images/settings.png)
+
+> 그림을 다시 만들려면 `cd tests && npm run shots`를 실행하고 `tests/shots/`의 결과를 `docs/images/`로 복사합니다.
+
 ## 구성
 
 | 경로 | 내용 |
