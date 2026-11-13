@@ -88,6 +88,7 @@
   };
   function updateSpeedLabel() {
     if (P.speedLabel) P.speedLabel.textContent = `${speed.intended.toFixed(2)}x`;
+    P.updateDock();
   }
   function applySpeedSoon() {
     speed.applyNow();

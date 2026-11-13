@@ -154,8 +154,24 @@ textarea.uxk-input { resize: vertical; min-height: 80px; }
 .uxk-sub1 { color: #fff; font: 600 var(--uxk-sub-size, 22px)/1.35 var(--uxk-font); }
 .uxk-sub2 { color: #ffd54f; font: 600 calc(var(--uxk-sub-size, 22px) * .86)/1.35 var(--uxk-font); }
 html.uxk-hide-native-cc [class*="captions-display--captions-container"] { display: none !important; }
-html.uxk-theater [class*="curriculum-item-view--scaled-height-limiter"] { max-height: calc(100vh - 56px) !important; height: calc(100vh - 56px) !important; }
-html.uxk-theater [class*="curriculum-item-view--aspect-ratio-container"] { max-height: calc(100vh - 56px) !important; }
+html.uxk-theater [class*="curriculum-item-view--scaled-height-limiter"] { max-height: calc(100vh - 56px - var(--uxk-dock-h, 0px)) !important; height: calc(100vh - 56px - var(--uxk-dock-h, 0px)) !important; }
+html.uxk-theater [class*="curriculum-item-view--aspect-ratio-container"] { max-height: calc(100vh - 56px - var(--uxk-dock-h, 0px)) !important; }
+
+/* ---------- 영상 아래 도크 (도구 줄 + 자막 영역) ---------- */
+.uxk-dock { box-sizing: border-box; width: 100%; background: #1c1d1f; color: #fff; border-top: 1px solid rgba(255,255,255,.14); font-family: var(--uxk-font); }
+.uxk-dock[data-mode="fixed"] { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147482000; box-shadow: 0 -4px 16px rgba(0,0,0,.35); }
+html:not(.uxk-dock-on) .uxk-dock { display: none; }
+.uxk-dock-subs { min-height: calc(var(--uxk-sub-size, 22px) * 2.6 + 12px); padding: 6px 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; text-align: center; user-select: text; }
+.uxk-dock[data-subs="off"] .uxk-dock-subs { display: none; }
+.uxk-dsub1, .uxk-dsub2 { white-space: pre-wrap; }
+.uxk-dsub1:empty, .uxk-dsub2:empty { display: none; }
+.uxk-dsub1 { color: #fff; font: 600 var(--uxk-sub-size, 22px)/1.35 var(--uxk-font); }
+.uxk-dsub2 { color: #ffd54f; font: 600 calc(var(--uxk-sub-size, 22px) * .86)/1.35 var(--uxk-font); }
+.uxk-dock-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px 8px; }
+.uxk-dock .uxk-tb-btn:focus-visible, .uxk-dock .uxk-tb-speed:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+html.uxk-dock-fixed.uxk-dock-on body::after { content: ""; display: block; height: var(--uxk-dock-h, 0px); } /* 고정 도크에 페이지 끝이 가리지 않게 */
+/* 도크가 켜져 있으면(전체화면 제외) 영상 위의 도구 막대·자막은 숨긴다 */
+html.uxk-dock-on .uxk-layer .uxk-toolbar, html.uxk-dock-on .uxk-layer .uxk-subs { display: none !important; }
 
 .uxk-pill {
   position: absolute; left: 10px; top: 10px; background: rgba(20,20,24,.78); color: #fff; border: 0; pointer-events: auto;

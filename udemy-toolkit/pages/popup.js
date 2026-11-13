@@ -65,7 +65,7 @@
       if (c.count) return `✓ ${c.name} (${c.count})`;
       return c.optional ? `– ${c.name} (0) · 해당 화면이 아니면 없는 게 정상` : `✗ ${c.name} (0)\n    영향: ${c.impact}`;
     };
-    const head = `Udemy Toolkit v${chrome.runtime.getManifest().version} · 화면 종류: ${r.route}`;
+    const head = `Udemy Toolkit v${chrome.runtime.getManifest().version} · 화면 종류: ${r.route}${r.route === 'player' ? ` · 도구 줄: ${r.dock || '없음'}` : ''}`;
     const body = r.checks.map(line).join('\n') || '이 화면은 점검 항목이 없습니다.';
     $('#diag-out').textContent = `${head}\n${body}`;
     $('#diag-hint').textContent = r.checks.some((c) => !c.count && !c.optional)

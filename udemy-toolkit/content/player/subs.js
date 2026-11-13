@@ -70,8 +70,10 @@
     subs.gen++; subs.loading = null; subs.loadingKey = null; // 진행 중이던 불러오기는 낡은 것이 되어 결과가 버려진다 (강의·언어 설정이 바뀐 경우)
     subs.key = null; subs.primary = null; subs.second = []; subs.secondInfo = null; subs.captions = []; subs.idx = -1; subs.loop = null; subs.ab = { a: null, b: null }; subs.shadowDone = -1;
     if (P.sub1) { P.sub1.textContent = ''; P.sub2.textContent = ''; }
+    P.setDockSubs('', '');
     if (P.subsBox) P.subsBox.dataset.i = '';
     applyNativeCc();
+    P.updateDock(); // 반복 표시도 함께 꺼진다
   }
   const staleError = () => { const e = new Error('강의가 바뀌어 취소됨'); e.stale = true; return e; };
 
@@ -164,7 +166,7 @@
 
   function renderSubs() {
     if (!P.subsBox) return;
-    if (!P.S.subs.enabled || !subs.primary || !P.ctx.video) { if (P.subsBox.dataset.i !== '-2') { P.sub1.textContent = ''; P.sub2.textContent = ''; P.subsBox.dataset.i = '-2'; P.subsBox.classList.add('uxk-empty'); } return; }
+    if (!P.S.subs.enabled || !subs.primary || !P.ctx.video) { if (P.subsBox.dataset.i !== '-2') { P.sub1.textContent = ''; P.sub2.textContent = ''; P.setDockSubs('', ''); P.subsBox.dataset.i = '-2'; P.subsBox.classList.add('uxk-empty'); } return; }
     const cues = subs.primary.cues;
     const i = UXK.vtt.find(cues, P.ctx.video.currentTime, subs.idx);
     if (String(i) === P.subsBox.dataset.i) return;
@@ -173,6 +175,7 @@
     P.sub1.textContent = i >= 0 && P.S.subs.showPrimary ? cues[i].text : '';
     P.sub2.textContent = i >= 0 && P.S.subs.showSecondary ? subs.second[i] || '' : '';
     P.subsBox.classList.toggle('uxk-empty', !(P.sub1.textContent || P.sub2.textContent));
+    P.setDockSubs(P.sub1.textContent, P.sub2.textContent);
   }
 
   P.lastT = 0;

@@ -57,6 +57,7 @@
         "content/player/lessons.js",
         "content/player/notes.js",
         "content/player/tools.js",
+        "content/player/dock.js",
         "content/player/index.js",
         "content/catalog.js",
         "content/diagnose.js",

@@ -75,6 +75,8 @@
     } catch (err) {
       if (err && err.stale) return; // 강의 전환으로 취소된 작업
       UXK.ui.toast(String(err && err.message ? err.message : err), { kind: 'err', timeout: 5000 });
+    } finally {
+      P.updateDock(); // 켜짐 표시·속도 표시를 동작 뒤의 상태에 맞춘다
     }
   }
 
@@ -83,10 +85,11 @@
     if (videoAC) videoAC.abort();
     videoAC = null;
     P.ctx.video = v;
-    if (!v) { if (P.layer) P.layer.remove(); return; }
+    if (!v) { if (P.layer) P.layer.remove(); P.placeDock(); return; }
     P.ctx.host = P.hostOf(v);
     P.buildLayer();
     P.placeLayer();
+    P.placeDock();
     P.updateSpeedLabel();
     const ac = new AbortController();
     videoAC = ac;
@@ -123,6 +126,7 @@
     else if (v && P.layer && !P.layer.isConnected) P.placeLayer();
     P.injectSectionToggles();
     P.updateSectionLabels();
+    P.placeDock();
   }
   const scanSoon = UXK.throttle(scan, 400);
   function onDocChange(e) {
@@ -145,7 +149,7 @@
     document.addEventListener('pointerdown', onNativeSpeedPointer, oc);
     document.addEventListener('click', onNativeSpeedPointer, oc); // 키보드(Tab·Enter)로 Udemy 속도 메뉴를 고른 경우도 사용자 변경으로 인식
     document.addEventListener('change', onDocChange, oc);
-    document.addEventListener('fullscreenchange', () => P.placeLayer(), o);
+    document.addEventListener('fullscreenchange', () => { P.placeLayer(); P.placeDock(); }, o);
     window.addEventListener('pagehide', () => P.tracker.flush(), o);
     document.addEventListener('visibilitychange', () => { if (document.hidden) P.tracker.flush(); else if (P.ctx.video && !P.ctx.video.paused) P.startRaf(); }, o);
     observer = new MutationObserver(scanSoon);
@@ -182,6 +186,7 @@
     if (videoAC) videoAC.abort();
     if (P.exportAbort) P.exportAbort.stop = true; // 코스 전체 내보내기는 화면을 떠나면 멈춘다
     if (P.layer) P.layer.remove();
+    P.removeDock();
     P.tracker.flush();
     clearInterval(P.tracker.timer); P.tracker.timer = null;
     P.layer = P.pill = null;
@@ -195,6 +200,7 @@
     parseHotkeys();
     P.applyLayerStyle();
     P.placeLayer();
+    P.placeDock();
     P.updatePill();
     P.injectSectionToggles();
     const langChanged = prev && (prev.subs.primaryLang !== s.subs.primaryLang || prev.subs.secondaryLang !== s.subs.secondaryLang || prev.subs.translate !== s.subs.translate);

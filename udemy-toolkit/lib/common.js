@@ -53,6 +53,7 @@
       shadowPause: false, // 문장 끝마다 일시정지(따라 말하기)
     },
     player: {
+      dock: true, // 영상 아래 도구 줄·자막 영역 (전체화면에서는 영상 위 도구 막대·자막을 쓴다)
       toolbar: true,
       remaining: true,
       sectionToggles: true,

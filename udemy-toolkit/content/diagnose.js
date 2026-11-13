@@ -36,6 +36,7 @@
     const names = (sel, pick) => [...new Set(Array.from(document.querySelectorAll(sel)).flatMap(pick))].sort();
     const purposes = names('[data-purpose]', (n) => [n.getAttribute('data-purpose')]).slice(0, 500);
     const classes = names('[class*="--"]', (n) => String(n.getAttribute('class')).split(/\s+/).filter((c) => c.includes('--')).map((c) => c.replace(/--\w{4,8}$/, ''))).slice(0, 300);
-    return { route, checks, purposes, classes };
+    const dockEl = document.querySelectorAll('.uxk-dock')[0]; // 도구 줄이 놓인 방식: below(영상 바로 아래) / inside / fixed(화면 맨 아래)
+    return { route, checks, purposes, classes, dock: dockEl ? dockEl.dataset.mode || '' : '' };
   };
 })();
