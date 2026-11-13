@@ -20,7 +20,7 @@
     if (box) return;
     line1 = el('div', { class: 'uxk-cap1' });
     line2 = el('div', { class: 'uxk-cap2' });
-    box = el('div', { class: 'uxk-capbox', 'aria-label': 'Dual subtitles' }, [line1, line2]);
+    box = el('div', { class: 'uxk-capbox', role: 'group', 'aria-label': 'Dual subtitles' }, [line1, line2]);
   }
   function syncText() {
     if (!box) return;

@@ -16,10 +16,10 @@
   const inp = (name, attrs = {}) => el('input', { 'data-f': name, class: 'uxk-input', ...attrs });
 
   function buildPanel() {
-    P.panel = el('div', { class: 'uxk-lib', id: 'uxk-lib' });
+    P.panel = el('div', { class: 'uxk-lib', id: 'uxk-lib', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'uxk-lib-title' }); // 화면 전체를 덮는 대화상자
     const head = el('div', { class: 'uxk-lib-head' }, [
-      el('h2', { text: 'My Course Tools' }),
-      el('div', { class: 'uxk-seg', role: 'tablist' }, [
+      el('h2', { id: 'uxk-lib-title', tabindex: '-1', text: 'My Course Tools' }),
+      el('div', { class: 'uxk-seg', role: 'group', 'aria-label': 'Course scope' }, [
         el('button', { 'data-scope': 'active', class: 'uxk-seg-btn' }),
         el('button', { 'data-scope': 'archived', class: 'uxk-seg-btn' }),
         el('button', { 'data-scope': 'all', class: 'uxk-seg-btn' }),
@@ -56,7 +56,7 @@
       el('label', { class: 'uxk-chk' }, [inp('noupd', { type: 'checkbox', checked: true }), ' Include courses with no update date']),
       el('datalist', { id: 'uxk-cap-list' }),
     ]);
-    const presetSel = el('select', { class: 'uxk-input', 'data-preset': '1' }, [el('option', { value: '', text: 'Load preset' })]);
+    const presetSel = el('select', { class: 'uxk-input', 'data-preset': '1', 'aria-label': 'Filter presets' }, [el('option', { value: '', text: 'Load preset' })]);
     const filterRow = el('div', { class: 'uxk-row' }, [
       presetSel,
       el('button', { class: 'uxk-btn', 'data-act': 'preset-save', text: 'Save current filters' }),
@@ -68,7 +68,7 @@
     const filters = el('details', { class: 'uxk-lib-filters', open: true }, [el('summary', { text: 'Filters & sorting (menus apply instantly; press Apply or Enter after typing)' }), grid, filterRow]);
 
     const bulk = el('div', { class: 'uxk-lib-bulk' }, [
-      el('span', { class: 'uxk-bulk-count', text: '0 selected' }),
+      el('span', { class: 'uxk-bulk-count', 'aria-live': 'polite', text: '0 selected' }),
       el('button', { class: 'uxk-btn uxk-btn-danger', 'data-act': 'archive', text: 'Archive' }),
       el('button', { class: 'uxk-btn', 'data-act': 'unarchive', text: 'Unarchive' }),
       el('button', { class: 'uxk-btn', 'data-act': 'tag-add', text: 'Add tag' }),
@@ -82,7 +82,7 @@
       el('button', { class: 'uxk-btn', 'data-act': 'md', text: 'Markdown checklist' }),
       el('button', { class: 'uxk-btn', 'data-act': 'json', text: 'JSON' }),
     ]);
-    const status = el('div', { class: 'uxk-lib-status' });
+    const status = el('div', { class: 'uxk-lib-status', role: 'status' });
     const list = el('div', { class: 'uxk-lib-list' });
     P.selBanner = el('div', { class: 'uxk-selbanner', role: 'status', hidden: true }); // 보이는 줄을 모두 고르면 "조건에 맞는 전체 선택" 안내를 보인다
     P.panel.append(head, stats, filters, bulk, P.selBanner, status, list);
@@ -92,7 +92,9 @@
     P.panel.addEventListener('click', P.onPanelClick);
     P.panel.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && e.target.matches('input[data-f]')) { e.preventDefault(); applyForm(); }
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('th[data-k]')) { e.preventDefault(); e.target.click(); }
       if (e.key === 'Escape') P.closePanel();
+      UXK.ui.trapTab(P.panel, e);
       e.stopPropagation(); // 패널 입력 중에는 페이지 단축키 차단
     });
     presetSel.addEventListener('change', () => {
@@ -169,6 +171,7 @@
       const k = b.getAttribute('data-scope');
       b.textContent = labels[k];
       b.classList.toggle('uxk-on', P.state.scope === k);
+      b.setAttribute('aria-pressed', P.state.scope === k ? 'true' : 'false');
     });
   }
 
@@ -191,7 +194,7 @@
       `<b>${UXK.fmtNum(notStarted.length)}</b> not started (${UXK.fmtNum(Math.round(nsHours))} h)`,
       `avg rating <b>${avg.toFixed(2)}</b>`,
       topCats ? `top categories: ${esc(topCats)}` : '',
-    ].filter(Boolean).join('<span class="uxk-dot">·</span>');
+    ].filter(Boolean).join('<span class="uxk-dot" aria-hidden="true">·</span>');
   }
 
   function rowHtml(c) {
@@ -201,7 +204,7 @@
     const flags = [c.favorite ? '<span class="uxk-chip uxk-chip-fav" title="Udemy favorite">Favorite</span>' : '', c.archived ? '<span class="uxk-chip uxk-chip-arc">Archived</span>' : ''].join('');
     const prog = Math.min(100, c.progress || 0);
     return `<tr data-id="${Number(c.id)}">
-      <td class="uxk-c"><input type="checkbox" class="uxk-sel" title="Shift+click another row to select the whole range" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
+      <td class="uxk-c"><input type="checkbox" class="uxk-sel" aria-label="Select ${esc(c.title)}" title="Shift+click another row to select the whole range" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
       <td class="uxk-title"><a href="/course-dashboard-redirect/?course_id=${Number(c.id)}" target="_blank" rel="noopener">${esc(c.title)}</a>
         <div class="uxk-sub">${sub}${flags}${tags}${m.memo ? `<span class="uxk-memo" title="${esc(m.memo)}">Note</span>` : ''}</div></td>
       <td class="uxk-n">${c.rating ? c.rating.toFixed(2) : '-'}</td>
@@ -210,11 +213,11 @@
       <td class="uxk-n">${esc(c.updated || '-')}</td>
       <td class="uxk-n">${c.hours ? c.hours.toFixed(1) + 'h' : '-'}</td>
       <td class="uxk-n">${UXK.fmtCompact(c.subs)}</td>
-      <td class="uxk-n"><span class="uxk-bar"><i data-w="${prog}"></i></span>${prog}%</td>
+      <td class="uxk-n"><span class="uxk-bar" aria-hidden="true"><i data-w="${prog}"></i></span>${prog}%</td>
       <td class="uxk-n">${esc(c.enrolled || '-')}</td>
       <td class="uxk-n">${esc(c.accessed || '-')}</td>
-      <td class="uxk-c"><button class="uxk-icon ${m.queue ? 'uxk-on' : ''}" data-row="queue" title="Add to / remove from queue">${m.queue ? '★' : '☆'}</button>
-        <button class="uxk-icon" data-row="edit" title="Edit tags & notes">✎</button></td>
+      <td class="uxk-c"><button class="uxk-icon ${m.queue ? 'uxk-on' : ''}" data-row="queue" aria-pressed="${m.queue ? 'true' : 'false'}" aria-label="Study queue: ${esc(c.title)}" title="Add to / remove from queue">${m.queue ? '★' : '☆'}</button>
+        <button class="uxk-icon" data-row="edit" aria-label="Edit tags and notes: ${esc(c.title)}" title="Edit tags & notes">✎</button></td>
     </tr>`;
   }
 
@@ -233,10 +236,14 @@
     const arrow = (k) => (P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? ' ▲' : ' ▼') : '');
     const allChecked = slice.length > 0 && slice.every((c) => P.state.selected.has(c.id));
     const thead = COLS.map(([k, t], i) => (i === 0
-      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" ${allChecked ? 'checked' : ''} title="Select / deselect the ${slice.length} courses shown. Tip: Shift+click a row checkbox to select a range"></th>`
-      : `<th ${k ? `data-k="${k}"` : ''}>${t}${arrow(k)}</th>`)).join('');
-    $('.uxk-lib-list', P.panel).innerHTML = `<table><thead><tr>${thead}</tr></thead><tbody>${slice.map(rowHtml).join('')}</tbody></table>` +
+      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" aria-label="Select all shown courses" ${allChecked ? 'checked' : ''} title="Select / deselect the ${slice.length} courses shown. Tip: Shift+click a row checkbox to select a range"></th>`
+      : `<th ${k ? `data-k="${k}" tabindex="0" aria-sort="${P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}"` : ''}>${t}${arrow(k)}</th>`)).join('');
+    // 표를 새로 그리면 초점이 있던 머리글·전체 선택 칸이 사라지므로, 새로 그린 뒤 같은 칸으로 초점을 돌려준다
+    const act = document.activeElement;
+    const focusKey = act && P.panel.contains(act) ? (act.classList.contains('uxk-all') ? 'all' : act.closest('th[data-k]') ? act.closest('th[data-k]').getAttribute('data-k') : null) : null;
+    $('.uxk-lib-list', P.panel).innerHTML = `<table aria-label="Your courses"><thead><tr>${thead}</tr></thead><tbody>${slice.map(rowHtml).join('')}</tbody></table>` +
       (rows.length > P.state.shown ? `<button class="uxk-btn uxk-more" data-act="more">Show more (${UXK.fmtNum(P.state.shown)} / ${UXK.fmtNum(rows.length)})</button>` : '');
+    if (focusKey) { const again = focusKey === 'all' ? $('.uxk-all', P.panel) : $(`th[data-k="${focusKey}"]`, P.panel); if (again) again.focus(); }
     // CSP가 인라인 style 속성을 막을 수 있어 CSSOM으로 너비 지정
     $$('.uxk-bar i[data-w]', P.panel).forEach((n) => { n.style.width = n.getAttribute('data-w') + '%'; });
     const age = P.cache.t ? Math.round((Date.now() - P.cache.t) / 60000) : 0;

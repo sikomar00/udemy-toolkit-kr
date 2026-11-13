@@ -170,6 +170,13 @@ html.uxk-theater [class*="curriculum-item-view--aspect-ratio-container"] { max-h
 html.uxk-capbox-on .uxk-layer .uxk-subs { display: none !important; } /* 박스를 쓰는 동안은 영상 위 자막을 숨긴다 */
 
 .uxk-toolbar .uxk-tb-btn:focus-visible, .uxk-toolbar .uxk-tb-speed:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+/* 접근성: 키보드 초점은 항상 보이게 (밝은 바탕은 보라색, 어두운 알림·도구 막대는 흰색), 움직임 줄이기 설정을 따른다 */
+.uxk-lib :focus-visible, .uxk-modal :focus-visible, .uxk-drawer :focus-visible, .uxk-fab:focus-visible, .uxk-selbanner :focus-visible { outline: 2px solid var(--uxk-accent); outline-offset: 2px; }
+.uxk-lib-list th[data-k]:focus-visible { outline-offset: -2px; }
+.uxk-toast :focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+#uxk-lib-title:focus { outline: none; } /* 열 때 초점을 옮기는 제목은 눈에 띄는 테두리를 두지 않는다 */
+@media (prefers-reduced-motion: reduce) { [class*="uxk-"] { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
 
 .uxk-pill {
   position: absolute; left: 10px; top: 10px; background: rgba(20,20,24,.78); color: #fff; border: 0; pointer-events: auto;
