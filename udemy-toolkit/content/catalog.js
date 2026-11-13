@@ -47,7 +47,7 @@
       mark.setAttribute('data-uxk-owned', String(c.id));
       if (root) root.classList.toggle('uxk-owned-hidden', !!S.catalog.hideOwned); // 숨기기는 카드로 확인된 경우만
       if (S.catalog.ownedBadges && !(root || a.parentElement || a).querySelector('.uxk-owned')) {
-        const badge = el('span', { class: 'uxk-owned', title: 'Course you already own (Toolkit for Udemy)' }, [`Owned · ${Math.min(100, c.progress)}% done${c.archived ? ' · archived' : ''}`]);
+        const badge = el('span', { class: 'uxk-owned', title: 'Course you already own (Toolkit for Udemy)' }, [UXK.t('Owned · {0}% done{1}', Math.min(100, c.progress), c.archived ? UXK.t(' · archived') : '')]);
         (a.querySelector('h3, h2, [data-purpose="course-title-url"]') || a).after(badge);
       }
     });
@@ -75,10 +75,10 @@
     }
     const parts = [];
     if (owned) {
-      parts.push(`<b>You own this course</b> · ${Math.min(100, Number(owned.progress) || 0)}% done${owned.archived ? ' · archived' : ''}${owned.enrolled ? ` · purchased ${esc(owned.enrolled)}` : ''}`);
-      parts.push(`<a class="uxk-btn uxk-btn-primary" href="/course-dashboard-redirect/?course_id=${Number(owned.id) || 0}">Continue course</a>`);
+      parts.push(`<b>${UXK.t('You own this course')}</b> · ${UXK.t('{0}% done', Math.min(100, Number(owned.progress) || 0))}${owned.archived ? UXK.t(' · archived') : ''}${owned.enrolled ? UXK.t(' · purchased {0}', esc(owned.enrolled)) : ''}`);
+      parts.push(`<a class="uxk-btn uxk-btn-primary" href="/course-dashboard-redirect/?course_id=${Number(owned.id) || 0}">${UXK.t('Continue course')}</a>`);
     }
-    infoBox.innerHTML = `<div class="uxk-info-main">${parts.join(' ')}</div><div class="uxk-info-extra">Loading info...</div><button class="uxk-info-x" title="Close">×</button>`;
+    infoBox.innerHTML = `<div class="uxk-info-main">${parts.join(' ')}</div><div class="uxk-info-extra">${UXK.t('Loading info...')}</div><button class="uxk-info-x" title="${UXK.t('Close')}" aria-label="${UXK.t('Close')}">×</button>`;
     infoBox.querySelector('.uxk-info-x').onclick = () => { infoBox.remove(); infoBox = null; };
     if (!courseId) return;
     try {
@@ -86,15 +86,15 @@
       if (!infoBox || shownFor !== slug) return; // 기다리는 동안 닫았거나 다른 강의로 이동함
       const caps = Array.isArray(j.caption_languages) ? j.caption_languages : [];
       const extra = [
-        j.created ? `First published ${esc(String(j.created).slice(0, 10))}` : '',
-        j.last_update_date ? `Last updated ${esc(j.last_update_date)}` : '',
-        j.content_length_video ? `Video ${UXK.fmtDur(j.content_length_video)}` : '',
-        j.num_reviews ? `${UXK.fmtNum(j.num_reviews)} reviews` : '',
-        caps.length ? `${caps.length} caption languages: ${caps.slice(0, 12).map(esc).join(', ')}${caps.length > 12 ? ' …' : ''}` : (j.has_closed_caption === false ? 'No captions' : ''),
+        j.created ? UXK.t('First published {0}', esc(String(j.created).slice(0, 10))) : '',
+        j.last_update_date ? UXK.t('Last updated {0}', esc(j.last_update_date)) : '',
+        j.content_length_video ? UXK.t('Video {0}', UXK.fmtDur(j.content_length_video)) : '',
+        j.num_reviews ? UXK.t('{0} reviews', UXK.fmtNum(j.num_reviews)) : '',
+        caps.length ? UXK.t('{0} caption languages: {1}{2}', caps.length, caps.slice(0, 12).map(esc).join(', '), caps.length > 12 ? ' …' : '') : (j.has_closed_caption === false ? UXK.t('No captions') : ''),
       ].filter(Boolean).join(' · ');
-      infoBox.querySelector('.uxk-info-extra').innerHTML = extra || 'No extra info';
+      infoBox.querySelector('.uxk-info-extra').innerHTML = extra || UXK.t('No extra info');
     } catch (e) {
-      if (infoBox && shownFor === slug) infoBox.querySelector('.uxk-info-extra').textContent = 'Could not load extra info';
+      if (infoBox && shownFor === slug) infoBox.querySelector('.uxk-info-extra').textContent = UXK.t('Could not load extra info');
     }
   }
 

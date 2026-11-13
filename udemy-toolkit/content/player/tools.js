@@ -91,13 +91,13 @@
   }
   const ACTION_LABELS = UXK.ACTION_LABELS;
   function showHelp() {
-    const rows = Object.entries(P.S.hotkeys).filter(([, v]) => v).map(([k, v]) => `<tr><td><kbd>${esc(v)}</kbd></td><td>${esc(ACTION_LABELS[k] || k)}</td></tr>`).join('');
+    const rows = Object.entries(P.S.hotkeys).filter(([, v]) => v).map(([k, v]) => `<tr><td><kbd>${esc(v)}</kbd></td><td>${esc(UXK.t(ACTION_LABELS[k] || k))}</td></tr>`).join('');
     UXK.ui.modal({
       title: 'Hotkeys',
       width: 520,
       body: `<div class="uxk-scroll"><table class="uxk-table">${rows}</table></div>
-        <div class="uxk-hint">Udemy's own shortcuts (still work): Space play/pause · ←/→ 5 s · Shift+←/→ speed · ↑/↓ volume · F fullscreen · M mute · B Udemy note · ? help</div>
-        <div class="uxk-hint">Global extension shortcuts that work outside the tab can be changed at chrome://extensions/shortcuts. Change the other keys on the settings page.</div>`,
+        <div class="uxk-hint">${UXK.t("Udemy's own shortcuts (still work): Space play/pause · ←/→ 5 s · Shift+←/→ speed · ↑/↓ volume · F fullscreen · M mute · B Udemy note · ? help")}</div>
+        <div class="uxk-hint">${UXK.t('Global extension shortcuts that work outside the tab can be changed at chrome://extensions/shortcuts. Change the other keys on the settings page.')}</div>`,
       buttons: [{ label: 'Close', value: true }],
     });
   }

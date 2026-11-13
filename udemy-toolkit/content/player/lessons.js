@@ -99,18 +99,18 @@
     const r = P.remaining;
     const rate = P.speed.intended || 1;
     const sp = Math.abs(rate - 1) > 0.01 ? ` (${rate}x → ${UXK.fmtDur(r.remain / rate)})` : '';
-    P.pill.textContent = `${UXK.fmtDur(r.remain)} left${sp}${r.exact ? ` · ${r.nDone}/${r.n} done` : ' · estimated from progress'}`;
+    P.pill.textContent = UXK.t('{0} left{1}{2}', UXK.fmtDur(r.remain), sp, r.exact ? UXK.t(' · {0}/{1} done', r.nDone, r.n) : UXK.t(' · estimated from progress'));
   }
   const refreshRemaining = UXK.debounce(async () => { try { await computeRemaining(); updatePill(); updateSectionLabels(); } catch (e) { UXK.log('remaining', e); } }, 1500);
   async function showRemainingDetail() {
     if (!P.remaining) return;
     const rate = P.speed.intended || 1;
-    const rows = P.remaining.chapters.map((c, i) => `<tr><td>${i + 1}. ${esc(c.title)}</td><td class="uxk-n">${c.done}/${c.n}</td><td class="uxk-n">${UXK.fmtDur(c.total)}</td><td class="uxk-n">${c.remain ? UXK.fmtDur(c.remain) : 'Done'}</td><td class="uxk-n">${c.remain ? UXK.fmtDur(c.remain / rate) : '-'}</td></tr>`).join('');
+    const rows = P.remaining.chapters.map((c, i) => `<tr><td>${i + 1}. ${esc(c.title)}</td><td class="uxk-n">${c.done}/${c.n}</td><td class="uxk-n">${UXK.fmtDur(c.total)}</td><td class="uxk-n">${c.remain ? UXK.fmtDur(c.remain) : UXK.t('Done')}</td><td class="uxk-n">${c.remain ? UXK.fmtDur(c.remain / rate) : '-'}</td></tr>`).join('');
     await UXK.ui.modal({
       title: 'Time left by section',
       width: 640,
-      body: `<div class="uxk-hint">${UXK.fmtDur(P.remaining.total)} total · ${UXK.fmtDur(P.remaining.remain)} left · ${UXK.fmtDur(P.remaining.remain / rate)} at ${rate}x${P.remaining.exact ? '' : ' · progress API unavailable; estimated from overall progress'}</div>
-        <div class="uxk-scroll"><table class="uxk-table"><thead><tr><th>Section</th><th>Done</th><th>Total</th><th>Left</th><th>${rate}x</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+      body: `<div class="uxk-hint">${UXK.t('{0} total · {1} left · {2} at {3}x', UXK.fmtDur(P.remaining.total), UXK.fmtDur(P.remaining.remain), UXK.fmtDur(P.remaining.remain / rate), rate)}${P.remaining.exact ? '' : UXK.t(' · progress API unavailable; estimated from overall progress')}</div>
+        <div class="uxk-scroll"><table class="uxk-table"><thead><tr><th>${UXK.t('Section')}</th><th>${UXK.t('Done')}</th><th>${UXK.t('Total')}</th><th>${UXK.t('Left')}</th><th>${rate}x</th></tr></thead><tbody>${rows}</tbody></table></div>`,
       buttons: [{ label: 'Close', value: true }],
     });
   }
@@ -125,7 +125,7 @@
       if (!title) return;
       let lab = title.querySelector('.uxk-sec-remain');
       if (!lab) { lab = el('span', { class: 'uxk-sec-remain' }); title.appendChild(lab); }
-      const txt = c.remain ? `${UXK.fmtDur(c.remain)} left` : 'Done';
+      const txt = c.remain ? UXK.t('{0} left', UXK.fmtDur(c.remain)) : UXK.t('Done');
       if (lab.textContent !== txt) lab.textContent = txt;
     });
   }

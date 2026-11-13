@@ -25,6 +25,7 @@
 
   async function boot() {
     S = await UXK.getSettings();
+    UXK.i18n.setLang(S.ui.lang);
     applyGlobal();
     let route = UXK.route();
     await switchTo(route);
@@ -35,6 +36,7 @@
     });
     UXK.onSettings((s) => {
       S = s;
+      UXK.i18n.setLang(s.ui.lang);
       applyGlobal();
       if (active && active.onSettings) active.onSettings(s);
     });

@@ -14,7 +14,7 @@ const ctx = {
 };
 ctx.globalThis = ctx;
 vm.createContext(ctx);
-for (const f of ['lib/common.js', 'lib/vtt.js']) vm.runInContext(fs.readFileSync(path.join(EXT, f), 'utf8'), ctx, { filename: f });
+for (const f of ['lib/common.js', 'lib/i18n.js', 'lib/ko.js', 'lib/vtt.js']) vm.runInContext(fs.readFileSync(path.join(EXT, f), 'utf8'), ctx, { filename: f });
 const U = ctx.UXK;
 
 // ---------- VTT ----------
@@ -211,6 +211,74 @@ for (const [label, dir, files] of SPLITS) {
   s1.subs.bottom = 99;
   check('merge 결과를 바꿔도 DEFAULTS는 그대로', JSON.stringify(live.UXK.DEFAULTS.subs) === d0);
   check('호스트별 캐시 키', live.UXK.KEYS.courses() === 'uxk_courses_v3:www.udemy.com' && live.UXK.KEYS.courses('acme.udemy.com') === 'uxk_courses_v3:acme.udemy.com');
+
+  // ---------- 번역 (영어 / 한국어) ----------
+  const I = U.i18n;
+  check('번역: 영어가 기본이면 글이 그대로', I.lang() === 'en' && U.t('Close') === 'Close' && U.t('{0} selected', 3) === '3 selected' && I.locale() === 'en-US');
+  I.setLang('ko');
+  check('번역: 한국어 낱말·틀 채우기', U.t('Close') === '닫기' && U.t('{0} selected', 3) === '선택 3개' && I.locale() === 'ko-KR');
+  check('번역: 이미 만든 문장을 틀로 찾아 번역 (바뀌는 부분 속 낱말도)', U.t('3 selected') === '선택 3개' && U.t('Archive... 2 / 5') === '보관 중... 2 / 5');
+  check('번역: 앞뒤 공백은 그대로 둔 채 번역', U.t(' Queue only') === ' 학습 큐만' && U.t('Queue only ') === '학습 큐만 ');
+  check('번역: 사전에 없는 글·사용자 글(강의 제목 등)은 건드리지 않음', ['Python Basics', 'Course 102 Python', 'Math', 'Lecture 5'].every((s) => U.t(s) === s));
+  check('번역: 틀 속 사용자 글은 그대로 (사전에 똑같은 글이 없을 때)', U.t('Select Python Bootcamp') === 'Python Bootcamp 선택' && U.t('Select 5') === '5 선택');
+  check('번역: 값을 넣는 전용 틀', U.t('Course {0}', 7) === '강의 7' && U.t('{0}h', '1.5') === '1.5시간');
+  check('번역: 시간·숫자 표기도 한국어 (25분, 2시간 5분, 만 단위)', U.fmtDur(1500) === '25분' && U.fmtDur(3600 * 2 + 60 * 5) === '2시간 5분' && U.fmtCompact(22100) === '2.2만', [U.fmtDur(1500), U.fmtDur(7500), U.fmtCompact(22100)].join(' | '));
+  I.setLang('en');
+  check('번역: 영어로 되돌리면 시간·숫자 표기도 영어', U.t('Close') === 'Close' && U.fmtDur(1500) === '25m' && U.fmtCompact(22100) === '22.1K');
+  I.setLang('auto');
+  check('번역: auto는 브라우저 언어를 따르고 모르면 영어', I.lang() === 'en');
+  // 사전 점검: ko.js를 따로 읽어 틀 자리표시자({0}…)와 앞뒤 공백·줄바꿈이 영어와 한국어에서 같은지 본다
+  const added = [];
+  const kctx = { globalThis: null, UXK: { i18n: { add: (l, e) => added.push(e) } } };
+  kctx.globalThis = kctx;
+  vm.createContext(kctx);
+  vm.runInContext(fs.readFileSync(path.join(EXT, 'lib/ko.js'), 'utf8'), kctx, { filename: 'lib/ko.js' });
+  const entries = added.flatMap((e) => Object.entries(e));
+  const holders = (s) => (s.match(/\{\d\}/g) || []).sort().join('');
+  const badHold = entries.filter(([en, ko]) => holders(en) !== holders(ko)).map(([en]) => en);
+  const badSpace = entries.filter(([en, ko]) => /^\s/.test(en) !== /^\s/.test(ko) || /\s$/.test(en) !== /\s$/.test(ko) || (en.match(/\n/g) || []).length !== (ko.match(/\n/g) || []).length).map(([en]) => en);
+  check(`한국어 사전 ${entries.length}개: 자리표시자가 영어와 같음`, badHold.length === 0, badHold.slice(0, 3).join(' || '));
+  check('한국어 사전: 앞뒤 공백·줄바꿈이 영어와 같음', badSpace.length === 0, badSpace.slice(0, 3).join(' || '));
+  check('한국어 사전: 열쇠 중복·빈 번역 없음', new Set(entries.map(([en]) => en)).size === entries.length && entries.every(([, ko]) => ko.trim()), `${entries.length - new Set(entries.map(([en]) => en)).size} duplicates`);
+  // 소스 훑기: UXK.t(...)의 글과 화면에 곧바로 들어가는 글(text/title/label/toast 등)이 모두 한국어 사전에 있는지 (새 글을 넣고 번역을 빠뜨리면 여기서 걸린다)
+  const srcFiles = [];
+  (function walk(d) { for (const n of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, n.name); if (n.isDirectory()) { if (!/^(icons|_locales)$/.test(n.name)) walk(p); } else if (/\.(js|html)$/.test(n.name) && !/^(ko|i18n)\.js$/.test(n.name)) srcFiles.push(p); } })(EXT);
+  const koKeys = new Set(entries.map(([en]) => en));
+  const uiTexts = new Set();
+  const addText = (s) => { s = s.replace(/\\n/g, '\n').replace(/\\'/g, "'"); if (/[A-Za-z]{3,}/.test(s)) uiTexts.add(s); };
+  const quoted = /(['"])((?:\\.|(?!\1).)*)\1/g;
+  for (const f of srcFiles) {
+    const src = fs.readFileSync(f, 'utf8');
+    if (f.endsWith('.html')) {
+      for (const m of src.matchAll(/>([^<>{}]*[A-Za-z]{3,}[^<>{}]*)</g)) addText(m[1].replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim());
+      for (const m of src.matchAll(/\b(?:title|placeholder|aria-label)="([^"]*[A-Za-z]{3,}[^"]*)"/g)) addText(m[1].replace(/&amp;/g, '&'));
+      continue;
+    }
+    for (const m of src.matchAll(/UXK\.t\(/g)) { // 첫 인자(조건식이면 두 글 모두)만 읽는다
+      let i = m.index + m[0].length, depth = 0;
+      const start = i;
+      for (; i < src.length; i++) {
+        const c = src[i];
+        if ('([{'.includes(c)) depth++;
+        else if (')]}'.includes(c)) { if (depth === 0) break; depth--; } else if (c === ',' && depth === 0) break;
+        else if (c === "'" || c === '"' || c === '`') { for (i++; i < src.length && src[i] !== c; i++) if (src[i] === '\\') i++; }
+      }
+      for (const l of src.slice(start, i).matchAll(quoted)) addText(l[2]);
+    }
+    for (const m of src.matchAll(/\b(?:text|title|label|placeholder|aria-label|hint|okLabel|message)\s*:\s*(['"])((?:\\.|(?!\1).)*)\1/g)) addText(m[2]);
+    for (const m of src.matchAll(/\b(?:toast|setStatus|confirm|prompt|flash|alert|setTitle)\(\s*(['"])((?:\\.|(?!\1).)*)\1/g)) addText(m[2]);
+  }
+  I.setLang('ko');
+  const noKo = [...uiTexts].filter((s) => !koKeys.has(s) && U.t(s) === s);
+  I.setLang('en');
+  check(`한국어 사전: 소스의 화면 글 ${uiTexts.size}개가 모두 번역됨`, noKo.length === 0, noKo.slice(0, 6).join(' || '));
+  // 브라우저 메시지(_locales): 두 언어의 열쇠가 같고 manifest가 쓰는 열쇠가 모두 있으며 설명은 132자 이하
+  const loc = (l) => JSON.parse(fs.readFileSync(path.join(EXT, '_locales', l, 'messages.json'), 'utf8'));
+  const [en, ko] = [loc('en'), loc('ko')];
+  const manifestText = fs.readFileSync(path.join(EXT, 'manifest.json'), 'utf8');
+  const used = [...manifestText.matchAll(/__MSG_(\w+)__/g)].map((m) => m[1]);
+  check('_locales: en/ko 열쇠 동일, manifest가 쓰는 열쇠가 모두 있음', JSON.stringify(Object.keys(en).sort()) === JSON.stringify(Object.keys(ko).sort()) && used.every((k) => en[k] && ko[k]), used.filter((k) => !en[k] || !ko[k]).join(','));
+  check('_locales: 설명 132자 이하 (웹스토어 한도)', en.extDescription.message.length <= 132 && ko.extDescription.message.length <= 132, `${en.extDescription.message.length}/${ko.extDescription.message.length}`);
 
   console.log(`\n단위 테스트: 통과 ${pass}, 실패 ${fail}`);
   process.exit(fail ? 1 : 0);

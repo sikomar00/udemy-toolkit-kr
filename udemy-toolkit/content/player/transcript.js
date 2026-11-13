@@ -36,8 +36,8 @@
       const s = el('select', { class: 'uxk-input' });
       if (includeAuto) s.appendChild(el('option', { value: 'auto', text: 'Auto (course language)' }));
       if (includeNone) s.appendChild(el('option', { value: 'none', text: 'None' }));
-      langs.forEach(([code, lab]) => s.appendChild(el('option', { value: code, text: `${lab} (${code})` })));
-      if (![...s.options].some((o) => o.value === cur)) s.appendChild(el('option', { value: cur, text: `${cur} (not in this course)` }));
+      langs.forEach(([code, lab]) => s.appendChild(el('option', { value: code, 'data-no-i18n': true, text: `${lab} (${code})` })));
+      if (![...s.options].some((o) => o.value === cur)) s.appendChild(el('option', { value: cur, 'data-no-i18n': true, text: UXK.t('{0} (not in this course)', cur) }));
       s.value = cur;
       return el('label', { class: 'uxk-field' }, [el('span', { text: label }), s]);
     };
@@ -79,7 +79,7 @@
     const cues = P.subs.primary.cues;
     const second = P.subs.second.length ? P.subs.second : null;
     const base = UXK.safeFile(`${P.courseTitle()} - ${P.lectureTitle()}`);
-    const wrap = el('div', { class: 'uxk-menu-body' }, [el('div', { class: 'uxk-hint', text: `${cues.length} sentences · primary ${P.subs.primary.cap.video_label || P.locOf(P.subs.primary.cap)}${P.subs.secondInfo ? ' · secondary ' + P.subs.secondInfo.label : ''}` })]);
+    const wrap = el('div', { class: 'uxk-menu-body' }, [el('div', { class: 'uxk-hint', text: UXK.t('{0} sentences · primary {1}{2}', cues.length, P.subs.primary.cap.video_label || P.locOf(P.subs.primary.cap), P.subs.secondInfo ? UXK.t(' · secondary {0}', P.subs.secondInfo.label) : '') })]);
     const act = (label, fn) => el('button', { class: 'uxk-btn', text: label, onclick: fn });
     wrap.appendChild(el('div', { class: 'uxk-row uxk-wrap' }, [
       act('Copy to clipboard (primary)', async () => UXK.ui.toast((await UXK.copyText(UXK.vtt.toText(cues))) ? 'Copied' : 'Copy failed')),
@@ -130,7 +130,7 @@
       UXK.download(`${UXK.safeFile(P.courseTitle())}_transcript.md`, out.join('\n'), 'text/markdown;charset=utf-8');
       prog.update(`${P.exportAbort.stop ? 'Stopped · ' : ''}${done} lectures saved${missing ? ` · ${missing} without subtitles` : ''}${failedN ? ` · ${failedN} failed to fetch` : ''}`, { timeout: 7000, actions: [] });
     } catch (e) {
-      prog.update('Course subtitle export failed: ' + e.message, { timeout: 7000, actions: [], kind: 'err' });
+      prog.update(UXK.t('Course subtitle export failed: {0}', UXK.t(e.message)), { timeout: 7000, actions: [], kind: 'err' });
     } finally {
       P.exportAbort = null;
     }

@@ -64,12 +64,12 @@
   async function renderNotes() {
     if (!notesDrawer) return;
     const list = await sortedNotes();
-    if (!list.length) { notesDrawer.body.innerHTML = `<div class="uxk-hint">No notes yet. Press ${esc(P.S.hotkeys.note)} in a video to add a note at the current time.</div>`; return; }
+    if (!list.length) { notesDrawer.body.innerHTML = `<div class="uxk-hint">${UXK.t('No notes yet. Press {0} in a video to add a note at the current time.', esc(P.S.hotkeys.note))}</div>`; return; }
     let last = null;
     notesDrawer.body.innerHTML = list.map((n) => {
       const head = n.lectureId !== last ? `<div class="uxk-note-lec">${esc(n.lectureTitle)}</div>` : '';
       last = n.lectureId;
-      return `${head}<div class="uxk-note" data-id="${esc(n.id)}"><button class="uxk-note-t" data-go="${Number(n.lectureId) || 0}:${Number(n.t) || 0}">${UXK.fmtClock(Number(n.t) || 0)}</button><div class="uxk-note-x">${esc(n.text).replace(/\n/g, '<br>')}</div><button class="uxk-icon" data-del="${esc(n.id)}" title="Delete">×</button></div>`;
+      return `${head}<div class="uxk-note" data-id="${esc(n.id)}"><button class="uxk-note-t" data-go="${Number(n.lectureId) || 0}:${Number(n.t) || 0}">${UXK.fmtClock(Number(n.t) || 0)}</button><div class="uxk-note-x">${esc(n.text).replace(/\n/g, '<br>')}</div><button class="uxk-icon" data-del="${esc(n.id)}" title="${UXK.t('Delete')}" aria-label="${UXK.t('Delete')}">×</button></div>`;
     }).join('');
   }
   async function onNotesClick(e) {
@@ -89,7 +89,7 @@
   }
   async function notesMarkdown() {
     const list = await sortedNotes();
-    const out = [`# ${P.courseTitle()} — Notes`, ''];
+    const out = [`# ${P.courseTitle()} — ${UXK.t('Notes')}`, ''];
     let last = null;
     list.forEach((n) => {
       if (n.lectureId !== last) { out.push('', `## ${n.lectureTitle}`, ''); last = n.lectureId; }

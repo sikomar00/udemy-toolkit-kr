@@ -64,7 +64,7 @@
     P.loadingProgress = { n: 0, t: 0 };
     updateFab();
     try {
-      const c = await UXK.lib.refresh((n, t) => { P.loadingProgress = { n, t }; updateFab(); P.setStatus(`Loading... ${UXK.fmtNum(n)} / ${UXK.fmtNum(t)}`); });
+      const c = await UXK.lib.refresh((n, t) => { P.loadingProgress = { n, t }; updateFab(); P.setStatus(UXK.t('Loading... {0} / {1}', UXK.fmtNum(n), UXK.fmtNum(t))); });
       setCache(c);
       return c;
     } finally {
@@ -77,9 +77,9 @@
     if (!P.fab) return;
     if (P.loadingProgress) {
       const pct = P.loadingProgress.t ? Math.round((P.loadingProgress.n / P.loadingProgress.t) * 100) : 0;
-      P.fab.textContent = `Loading course data ${pct}%`;
+      P.fab.textContent = UXK.t('Loading course data {0}%', pct);
     } else {
-      P.fab.textContent = 'My Course Tools';
+      P.fab.textContent = UXK.t('My Course Tools');
     }
   }
 

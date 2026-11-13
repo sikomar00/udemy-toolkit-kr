@@ -61,6 +61,16 @@
 - `run()` 분기 표 전환: 회귀 위험이 있어 사용자 결정 필요. (`player.js`와 `library.js`는 아래 구조로 분할 완료)
 - 작은 글씨 색 대비(`.uxk-owned`, 평점 색 등)와 모달 포커스 트랩: 디자인 결정 필요.
 
+## 화면 언어 (lib/i18n.js, lib/ko.js)
+- 영어 문장이 곧 열쇠입니다. `UXK.t('Close')`는 한국어 화면에서 '닫기'를 돌려주고, 사전에 없으면 영어 그대로 보여 줍니다. 값이 들어가는 글은 `UXK.t('{0} selected', n)`처럼 틀과 값을 따로 넘깁니다.
+- 이미 만들어진 영어 문장(`'Archive... 2 / 5'`)도 사전의 틀(`'{0}... {1} / {2}'`)로 찾아 번역합니다. 틀 속 가변 부분은 사전에 똑같은 글이 있을 때만 바꿔서, 강의 제목 같은 내 글이 틀에 걸려 바뀌지 않게 합니다. `{0}h`처럼 너무 넓게 맞는 틀은 `add(..., { exact: true })`로 값 넣기 전용으로 둡니다.
+- 자동 번역 자리: `UXK.el`(text·title·placeholder·aria-label·문자열 자식), 알림·확인창·서랍 제목, 재생 화면 표시, 내 강의 도구 상태 줄. 요소에 `'data-no-i18n': true`(HTML은 `data-no-i18n`)를 주면 그 안의 글은 번역하지 않습니다 (강의 제목, 프리셋 이름, 카테고리 이름, 저장한 문장·메모).
+- 설정·팝업 화면은 `UXK.i18n.initPage(settings)`가 화면 글을 한 번 번역하고 `MutationObserver`로 이후 바뀌는 글도 번역합니다. 입력칸의 value처럼 관찰되지 않는 글은 코드에서 `UXK.t`로 직접 번역합니다.
+- 언어는 설정 `ui.lang`(auto/en/ko)이고 auto는 `chrome.i18n.getUILanguage()`를 따릅니다. 시간·숫자 표기(25분, 2시간 5분, 2.2만)와 날짜 형식도 언어를 따릅니다.
+- 확장 이름·설명·단축키 이름은 `_locales/en|ko/messages.json` + `__MSG_…__`(`default_locale: en`)입니다. 웹스토어 설명은 132자 이하.
+- 번역이 빠진 글 찾기: 콘솔에서 `localStorage.uxk_i18n_missing = 1`을 켜고 한국어로 쓰면 `[UXK i18n missing]`에 영어 문장이 찍힙니다. 시험은 `UXK_TEST_LANG=ko npm test`처럼 브라우저 언어를 바꿔 돌릴 수 있고, 기본은 영어입니다. 한국어 통합 시험(`koreanTests`)은 이 기록이 비어 있어야 통과합니다.
+- 번역하지 않는 것: "화면 구조 점검" 보고서(개발자에게 붙여 넣는 글), 내보내기 파일의 데이터 값. CSV·Markdown 머리글은 화면 언어를 따릅니다.
+
 ## 플레이어 파일 구조 (content/player/)
 원래 한 파일(player.js, 약 1,290줄)이던 것을 기능별 파일로 나눔(이후 nativecc.js·capbox.js·bar.js 추가). 각 파일은 500줄 이하(tests/unit.js가 검사). 로드 순서는 manifest.json이 정한다: core → speed → subs → transcript → lessons → notes → tools → nativecc → capbox → bar → index → (catalog, diagnose, main).
 

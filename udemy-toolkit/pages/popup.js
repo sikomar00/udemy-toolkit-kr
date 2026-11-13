@@ -3,6 +3,7 @@
   const $ = (s) => document.querySelector(s);
   $('#ver').textContent = 'v' + chrome.runtime.getManifest().version;
   let S = await UXK.getSettings();
+  UXK.i18n.initPage(S);
 
   // 빠른 설정
   const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
@@ -18,14 +19,14 @@
   const dayKey = (o) => { const d = new Date(); d.setDate(d.getDate() - o); return UXK.today(d); };
   const secOf = (k) => (st.days && st.days[k] ? st.days[k].sec : 0);
   const today = secOf(dayKey(0));
-  $('#today-txt').textContent = `${Math.round(today / 60)} min${goal ? ` / goal ${S.stats.dailyGoalMin} min` : ''}`;
+  $('#today-txt').textContent = UXK.t('{0} min', Math.round(today / 60)) + (goal ? UXK.t(' / goal {0} min', S.stats.dailyGoalMin) : '');
   $('#today-bar').style.width = `${goal ? Math.min(100, (today / goal) * 100) : today ? 100 : 0}%`;
   const meets = (k) => (goal ? secOf(k) >= goal : secOf(k) >= 60);
   let streak = 0, i = meets(dayKey(0)) ? 0 : 1;
   while (i < 3650 && meets(dayKey(i))) { streak++; i++; } // 잘못된 목표값이 와도 끝나도록 10년 상한
   let week = 0;
   for (let k = 0; k < 7; k++) week += secOf(dayKey(k));
-  $('#streak').textContent = `${streak}-day streak · last 7 days ${UXK.fmtDur(week)}`;
+  $('#streak').textContent = UXK.t('{0}-day streak · last 7 days {1}', streak, UXK.fmtDur(week));
 
   // 현재 탭이 Udemy 강의라면 제어
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -40,7 +41,7 @@
     $('#tab-lecture').textContent = r.lecture ? `${r.course} · ${r.lecture}` : r.course || '';
     $('#tab-speed').textContent = `${Number(r.speed).toFixed(2)}x`;
     const rem = r.remaining;
-    $('#tab-remain').textContent = rem ? `${UXK.fmtDur(rem.remain)} left${rem.exact ? ` · ${rem.nDone}/${rem.n} done` : ' (est.)'}` : '';
+    $('#tab-remain').textContent = rem ? UXK.t('{0} left{1}{2}', UXK.fmtDur(rem.remain), '', rem.exact ? UXK.t(' · {0}/{1} done', rem.nDone, rem.n) : UXK.t(' (est.)')) : '';
   }
   if (isLearn) {
     await refreshTab(null);
@@ -57,7 +58,7 @@
     if (isUdemy) { try { r = await chrome.tabs.sendMessage(tab.id, { type: 'diagnose' }); } catch (e) {} }
     $('#diag-copy').hidden = !(r && r.ok);
     if (!r || !r.ok) {
-      $('#diag-out').textContent = isUdemy ? 'Cannot check this tab. Make sure it is a Udemy lecture, My Learning or search page (www.udemy.com); if you just updated the extension, reload the tab and try again.' : 'Open a Udemy tab, then open this popup and press the button.';
+      $('#diag-out').textContent = UXK.t(isUdemy ? 'Cannot check this tab. Make sure it is a Udemy lecture, My Learning or search page (www.udemy.com); if you just updated the extension, reload the tab and try again.' : 'Open a Udemy tab, then open this popup and press the button.');
       $('#diag-hint').textContent = '';
       return;
     }

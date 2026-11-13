@@ -101,7 +101,7 @@
       if (toggleKey) { n.setAttribute('aria-pressed', 'false'); toggles[toggleKey] = n; }
       return n;
     };
-    const tip = (text, action) => (P.S.hotkeys[action] ? `${text} (${P.S.hotkeys[action]})` : text);
+    const tip = (text, action) => (P.S.hotkeys[action] ? `${UXK.t(text)} (${P.S.hotkeys[action]})` : text);
     const sep = () => el('span', { class: 'uxk-tb-sep', 'aria-hidden': 'true' });
     toolbar = el('div', { class: 'uxk-toolbar', role: 'toolbar', 'aria-label': 'Toolkit for Udemy tools' }, [
       b('−', tip('Slower', 'speedDown'), () => P.run('speedDown')),
@@ -164,7 +164,7 @@
   function indicator(text) {
     if (!indicatorEl) return;
     if (!P.S.speed.overlay && /x$/.test(text)) return;
-    indicatorEl.textContent = text;
+    indicatorEl.textContent = UXK.t(text);
     indicatorEl.classList.add('uxk-show');
     clearTimeout(indTimer);
     indTimer = setTimeout(() => indicatorEl.classList.remove('uxk-show'), 1100);

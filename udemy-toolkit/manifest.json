@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Toolkit for Udemy",
+  "name": "__MSG_extName__",
+  "default_locale": "en",
   "version": "2.0.0",
-  "description": "Unofficial Udemy toolkit: library tools, speed & hotkeys, dual subtitles, sentence loop, notes, PiP, capture, study stats.",
+  "description": "__MSG_extDescription__",
   "icons": {
     "16": "icons/16.png",
     "32": "icons/32.png",
@@ -28,7 +29,7 @@
   },
   "action": {
     "default_popup": "pages/popup.html",
-    "default_title": "Toolkit for Udemy",
+    "default_title": "__MSG_extName__",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png"
@@ -42,6 +43,8 @@
       ],
       "js": [
         "lib/common.js",
+        "lib/i18n.js",
+        "lib/ko.js",
         "lib/api.js",
         "lib/vtt.js",
         "content/ui.js",
@@ -87,37 +90,37 @@
       "suggested_key": {
         "default": "Alt+Shift+P"
       },
-      "description": "Play / pause (works from other tabs)"
+      "description": "__MSG_cmdTogglePlay__"
     },
     "seek-back": {
       "suggested_key": {
         "default": "Alt+Shift+Left"
       },
-      "description": "Seek back"
+      "description": "__MSG_cmdSeekBack__"
     },
     "seek-forward": {
       "suggested_key": {
         "default": "Alt+Shift+Right"
       },
-      "description": "Seek forward"
+      "description": "__MSG_cmdSeekForward__"
     },
     "screenshot": {
       "suggested_key": {
         "default": "Alt+Shift+S"
       },
-      "description": "Capture the video frame (works with protected video)"
+      "description": "__MSG_cmdScreenshot__"
     },
     "speed-up": {
-      "description": "Speed up"
+      "description": "__MSG_cmdSpeedUp__"
     },
     "speed-down": {
-      "description": "Speed down"
+      "description": "__MSG_cmdSpeedDown__"
     },
     "next-lecture": {
-      "description": "Next lecture"
+      "description": "__MSG_cmdNextLecture__"
     },
     "quick-note": {
-      "description": "Timestamped note"
+      "description": "__MSG_cmdQuickNote__"
     }
   }
 }

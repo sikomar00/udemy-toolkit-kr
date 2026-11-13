@@ -132,7 +132,7 @@
       if (!second.length && P.S.subs.translate && tl !== 'none' && !locOf(p).toLowerCase().startsWith(tl)) {
         try {
           second = await translateCues(primary.cues, tl, lectureId);
-          secondInfo = { kind: 'mt', label: `Machine translation (${tl})` };
+          secondInfo = { kind: 'mt', label: UXK.t('Machine translation ({0})', tl) };
         } catch (e) { if (!quiet) UXK.ui.toast(e.message, { kind: 'err', timeout: 6000 }); }
       }
       if (stale()) throw staleError();
@@ -144,8 +144,8 @@
       const r = await mine;
       applyNativeCc();
       if (t0) {
-        const s2 = subs.secondInfo ? ` + ${subs.secondInfo.label}` : (P.S.subs.secondaryLang !== 'none' ? ' (no secondary subtitles)' : '');
-        t0.update(`Subtitles: ${subs.primary.cap.video_label || locOf(subs.primary.cap)}${s2} · ${subs.primary.cues.length} sentences`, { timeout: 2500 });
+        const s2 = subs.secondInfo ? ` + ${subs.secondInfo.label}` : (P.S.subs.secondaryLang !== 'none' ? UXK.t(' (no secondary subtitles)') : '');
+        t0.update(UXK.t('Subtitles: {0}{1} · {2} sentences', subs.primary.cap.video_label || locOf(subs.primary.cap), s2, subs.primary.cues.length), { timeout: 2500 });
       }
       return r;
     } catch (e) {

@@ -33,7 +33,7 @@
       x.onclick = () => t.close();
       if (id) toasts.set(id, t);
     }
-    t.text.textContent = msg;
+    t.text.textContent = UXK.t(msg);
     t.acts.textContent = '';
     actions.forEach((a) => {
       const b = el('button', { class: 'uxk-toast-btn', text: a.label });
@@ -142,7 +142,7 @@
 
   function confirm(title, message, { okLabel = 'Continue', danger = false } = {}) {
     const body = el('div', { class: 'uxk-pre' });
-    body.textContent = message;
+    body.textContent = UXK.t(message);
     return modal({ title, body, buttons: [{ label: 'Cancel', value: false }, { label: okLabel, value: true, primary: !danger, danger }], closeValue: false });
   }
 
@@ -160,7 +160,7 @@
     root.append(head, body);
     const d = {
       root, body, tools,
-      setTitle(t) { h.textContent = t; root.setAttribute('aria-label', t); },
+      setTitle(t) { h.textContent = UXK.t(t); root.setAttribute('aria-label', UXK.t(t)); },
       open() { const host = layer(); if (root.parentNode !== host) host.appendChild(root); root.classList.add('uxk-open'); },
       close() { root.classList.remove('uxk-open'); },
       toggle() { root.classList.contains('uxk-open') && root.isConnected ? d.close() : d.open(); },
