@@ -96,6 +96,8 @@ const PAGES = ['/course/abc/learn/lecture/1', '/home/my-courses/learning/', '/co
 const dp = diagAt(PAGES[0]);
 check('점검: 플레이어는 영상 2개를 세고 없는 요소는 0', dp.route === 'player' && dp.checks[0].count === 2 && dp.checks.slice(1).every((c) => c.count === 0), JSON.stringify(dp.checks.map((c) => c.count)));
 check('점검: data-purpose 값은 중복 없이 정렬', dp.purposes.join() === 'a,b');
+check('점검: 도구 줄(dock) 위치는 없으면 빈 문자열', dp.dock === '');
+check('도크: 기본값은 켜짐 (영상 아래 도구 줄·자막 영역)', U.DEFAULTS.player.dock === true);
 check('점검: class 접두어는 해시 조각을 떼고 중복 없이', dp.classes.join() === 'ud-btn,video-player--container', dp.classes.join());
 check('점검: 목차·메뉴처럼 열어야 보이는 항목은 선택 항목으로 표시', dp.checks.filter((c) => c.optional).length === 2 && diagAt(PAGES[1]).checks.filter((c) => c.optional).length === 1 && diagAt(PAGES[3]).checks.every((c) => c.optional));
 check('점검: 화면 종류별 항목 수', [9, 3, 3, 2].every((n, i) => diagAt(PAGES[i]).checks.length === n));

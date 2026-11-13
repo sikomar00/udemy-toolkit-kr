@@ -26,6 +26,8 @@ async function launch(mockOpts = {}) {
   let [sw] = context.serviceWorkers();
   if (!sw) sw = await context.waitForEvent('serviceworker', { timeout: 15000 });
   const extId = sw.url().split('/')[2];
+  // 기존 통합 테스트는 영상 위 도구 막대 기준이라 도크는 꺼 두고, 도크는 dockTests에서 켠다
+  await sw.evaluate(() => chrome.storage.sync.set({ uxk_settings: { player: { dock: false }, _rev: 1 } }));
   // 첫 설치 시 열리는 옵션 탭 닫기
   await sleep(500);
   for (const p of context.pages()) if (p.url().includes('options.html')) await p.close();
@@ -461,6 +463,80 @@ async function optionsTests(context, sw, extId) {
   await pop.close();
 }
 
+// 영상 아래 도크: 위치, 한 번 클릭 켜기/끄기, 자막 영역, 대본 복사, 대체 위치
+async function dockTests(page, mock, sw) {
+  const setDock = (on) => sw.evaluate(async (flag) => {
+    const cur = (await chrome.storage.sync.get('uxk_settings')).uxk_settings || {};
+    cur.player = { ...(cur.player || {}), dock: flag };
+    cur._rev = Math.max(Date.now(), (cur._rev || 0) + 1); // 실제 저장(UXK.saveSettings)처럼 개정 번호를 최소한만 올린다 (너무 크면 뒤 테스트의 변경이 낡은 것으로 무시됨)
+    await chrome.storage.sync.set({ uxk_settings: cur });
+  }, on);
+  const lecture = 'https://www.udemy.com/course/test-course/learn/lecture/1001';
+  const geometry = () => page.evaluate(() => {
+    const d = document.querySelector('.uxk-dock');
+    const dr = d.getBoundingClientRect(), vr = document.querySelector('[data-purpose="video-player"]').getBoundingClientRect();
+    return { mode: d.dataset.mode, dw: Math.round(dr.width), vw: Math.round(vr.width), dx: Math.round(dr.left - vr.left), gap: Math.round(dr.top - vr.bottom), prevIsVideo: !!d.previousElementSibling && d.previousElementSibling.matches('[data-purpose="video-player"]'), bottom: Math.round(dr.bottom), innerHeight: window.innerHeight, position: getComputedStyle(d).position };
+  });
+  const pressed = (label) => page.evaluate((l) => [...document.querySelectorAll('.uxk-dock button')].find((b) => b.textContent === l).getAttribute('aria-pressed'), label);
+  const waitPressed = (label, value) => page.waitForFunction(([l, v]) => [...document.querySelectorAll('.uxk-dock button')].find((b) => b.textContent === l).getAttribute('aria-pressed') === v, [label, value], { timeout: 6000 });
+  const overlayHidden = () => page.evaluate(() => ['.uxk-toolbar', '.uxk-subs'].every((s) => getComputedStyle(document.querySelector(s)).display === 'none'));
+
+  await setDock(true);
+  await page.goto(lecture);
+  await page.waitForSelector('.uxk-dock', { timeout: 15000 });
+  const g1 = await geometry();
+  check('도크: 영상 바로 아래에 영상과 같은 폭으로 끼워 넣음 (below)', g1.mode === 'below' && g1.gap >= -1 && g1.gap < 8 && g1.prevIsVideo && Math.abs(g1.dw - g1.vw) <= 2 && Math.abs(g1.dx) <= 2, JSON.stringify(g1));
+  check('도크: 영상 위 도구 막대·자막 상자는 숨김', await overlayHidden());
+
+  await page.click('.uxk-dock button:text("이중 자막")');
+  await page.evaluate(() => { const v = document.querySelector('video'); v.pause(); v.currentTime = 1; });
+  await page.waitForFunction(() => (document.querySelector('.uxk-dsub1') || {}).textContent === 'Hello world', null, { timeout: 10000 });
+  const dsub2 = await page.$eval('.uxk-dsub2', (n) => n.textContent);
+  const subsState = await page.$eval('.uxk-dock', (n) => n.dataset.subs);
+  check('도크: 이중 자막 버튼 한 번 클릭 → 켜짐 표시 + 도크 자막 영역에 원문·번역', (await pressed('이중 자막')) === 'true' && subsState === 'on' && dsub2 === '안녕 세상', `${subsState} ${dsub2}`);
+  check('도크: 자막이 켜져도 영상 위 자막 상자는 숨김 (영상을 가리지 않음)', await overlayHidden());
+
+  await page.click('.uxk-dock button:text("따라 말하기")');
+  await waitPressed('따라 말하기', 'true');
+  await page.click('.uxk-dock button:text("따라 말하기")');
+  await waitPressed('따라 말하기', 'false');
+  check('도크: 따라 말하기는 클릭 한 번으로 켜고 다시 한 번으로 끔 (켜짐 표시)', true);
+
+  const speedText = () => page.$eval('.uxk-dock .uxk-tb-speed', (n) => n.textContent);
+  const s0 = parseFloat(await speedText());
+  await page.click('.uxk-dock button:text-is("+")');
+  await page.waitForFunction((x) => Math.abs(parseFloat(document.querySelector('.uxk-dock .uxk-tb-speed').textContent) - x) < 0.01, s0 + 0.25, { timeout: 6000 });
+  check('도크: + 버튼 → 속도 표시가 0.25 올라감', true, `${s0} → ${await speedText()}`);
+
+  await page.click('.uxk-dock button:text("대본 복사")');
+  await page.waitForFunction(() => /대본 복사됨|복사 실패/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 8000 });
+  const clip = await page.evaluate(() => navigator.clipboard.readText());
+  check('도크: 대본 복사 버튼 → 강의 전체 대본이 클립보드에 복사', clip === 'Hello world Second sentence here Third sentence & more Long cue', JSON.stringify(clip));
+
+  // 전체화면: 도크는 숨기고 영상 위 자막·도구 막대를 쓰며, 나오면 도크가 돌아온다
+  await page.evaluate(() => document.querySelector('[data-purpose="video-player"]').requestFullscreen());
+  await page.waitForFunction(() => !!document.fullscreenElement && !document.documentElement.classList.contains('uxk-dock-on'), null, { timeout: 5000 });
+  const inFs = await page.evaluate(() => ({ dock: getComputedStyle(document.querySelector('.uxk-dock')).display, subs: getComputedStyle(document.querySelector('.uxk-subs')).display, toolbar: getComputedStyle(document.querySelector('.uxk-toolbar')).display }));
+  await page.evaluate(() => document.exitFullscreen());
+  await page.waitForFunction(() => !document.fullscreenElement && getComputedStyle(document.querySelector('.uxk-dock')).display !== 'none', null, { timeout: 5000 });
+  check('도크: 전체화면에서는 도크를 숨기고 영상 위 자막·도구 막대를 쓰며, 나오면 도크가 돌아옴', inFs.dock === 'none' && inFs.subs !== 'none' && inFs.toolbar !== 'none', JSON.stringify(inFs));
+
+  await setDock(false);
+  await page.waitForFunction(() => !document.querySelector('.uxk-dock'), null, { timeout: 8000 });
+  check('도크를 끄면 도크가 사라지고 영상 위 도구 막대가 돌아옴', await page.evaluate(() => getComputedStyle(document.querySelector('.uxk-toolbar')).display !== 'none'));
+
+  mock.setClip(true);
+  await setDock(true);
+  await page.goto(lecture);
+  await page.waitForSelector('.uxk-dock', { timeout: 15000 });
+  const g2 = await geometry();
+  check('도크: 영상 아래가 잘려 보이지 않으면 화면 맨 아래 고정(fixed)으로 전환', g2.mode === 'fixed' && g2.position === 'fixed' && Math.abs(g2.bottom - g2.innerHeight) <= 1, JSON.stringify(g2));
+  const spacer = await page.evaluate(() => ({ after: parseFloat(getComputedStyle(document.body, '::after').height), dock: document.querySelector('.uxk-dock').offsetHeight }));
+  check('도크: 고정 모드에서는 페이지 끝에 도크 높이만큼 여백을 둠 (끝 내용이 가려지지 않음)', spacer.dock > 20 && Math.abs(spacer.after - spacer.dock) <= 1, JSON.stringify(spacer));
+  mock.setClip(false);
+  await setDock(false);
+}
+
 async function fallbackTests() {
   process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1'; // 서비스 워커 요청도 모의 서버로 라우팅
   const { context, mock } = await launch({ rejectExtra: true, noProgress: true, noCors: true });
@@ -507,7 +583,7 @@ async function fallbackTests() {
   context.on('page', (p) => console.log('+ new page', p.url()));
   page.on('console', (m) => { if (m.type() === 'error' || /\[UXK\]/.test(m.text())) pageErrors.push('console: ' + m.text()); });
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'https://www.udemy.com' });
-  const sections = [['library', () => libraryTests(page, mock)], ['player', () => playerTests(page, mock, sw)], ['catalog', () => catalogTests(page, sw)], ['options', () => optionsTests(context, sw, extId)]];
+  const sections = [['library', () => libraryTests(page, mock)], ['player', () => playerTests(page, mock, sw)], ['dock', () => dockTests(page, mock, sw)], ['catalog', () => catalogTests(page, sw)], ['options', () => optionsTests(context, sw, extId)]];
   for (const [name, fn] of sections) {
     try { await fn(); } catch (e) {
       check(`[${name}] 예외 없이 완료`, false, e.message.split('\n')[0]);

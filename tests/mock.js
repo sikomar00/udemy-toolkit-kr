@@ -93,15 +93,15 @@ ${cards.map((id) => `<div><div class="enrolled-course-card--container--WJYo9 det
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.menu').forEach((m) => (m.hidden = true)); });
 </script></body></html>`;
 
-const PLAYER_HTML = (lectureId) => `<!doctype html><html><head><meta charset="utf-8"><title>Python 부트캠프 테스트 | Udemy</title></head><body>
+const PLAYER_HTML = (lectureId, clip = false) => `<!doctype html><html><head><meta charset="utf-8"><title>Python 부트캠프 테스트 | Udemy</title></head><body>
 <div data-module-id="course-taking" data-module-args='{"courseId":101,"isMobile":false}'>
   <header><h1 data-purpose="course-header-title">Python 부트캠프 테스트</h1></header>
   <input id="page-input" placeholder="page input">
-  <div data-purpose="video-player" style="width:800px;height:450px;background:#000">
+  ${clip ? '<div style="height:460px;overflow:hidden">' : ''}<div data-purpose="video-player" style="position:relative;width:800px;height:450px;background:#000">
     <video id="v" src="/mock/video.webm" muted autoplay playsinline style="width:100%;height:100%"></video>
-    <div data-purpose="video-controls"><button data-purpose="playback-rate-button">1x</button></div>
-    <div class="captions-display--captions-container--PqdGQ">native caption</div>
-  </div>
+    <div data-purpose="video-controls" style="position:absolute;left:0;bottom:0"><button data-purpose="playback-rate-button">1x</button></div>
+    <div class="captions-display--captions-container--PqdGQ" style="position:absolute;left:0;bottom:30px;color:#fff">native caption</div>
+  </div>${clip ? '</div>' : ''}
   <a id="go-to-next-item" href="#">next</a>
   <div data-purpose="curriculum-section-container" style="width:400px">
     <div data-purpose="section-panel-0"><button class="ud-accordion-panel-title">Section 1</button>
@@ -168,7 +168,7 @@ function createMock(opts = {}) {
       return route.fulfill({ status: 200, contentType: 'video/webm', headers: { 'Accept-Ranges': 'bytes', 'Content-Length': String(total) }, body: VIDEO });
     }
     if (p.startsWith('/home/my-courses/')) return route.fulfill({ status: 200, contentType: 'text/html', body: LIB_HTML([101, 102, 103]) });
-    if (/^\/course\/[^/]+\/learn\/lecture\/(\d+)/.test(p)) return route.fulfill({ status: 200, contentType: 'text/html', body: PLAYER_HTML(+RegExp.$1) });
+    if (/^\/course\/[^/]+\/learn\/lecture\/(\d+)/.test(p)) return route.fulfill({ status: 200, contentType: 'text/html', body: PLAYER_HTML(+RegExp.$1, opts.clipPlayer) });
     if (p.startsWith('/courses/search')) return route.fulfill({ status: 200, contentType: 'text/html', body: SEARCH_HTML });
     if (/^\/course\/slug-101\/?$/.test(p)) return route.fulfill({ status: 200, contentType: 'text/html', body: LANDING_HTML });
 
@@ -222,7 +222,7 @@ function createMock(opts = {}) {
     }
     return route.fulfill({ status: 404, contentType: 'text/plain', body: 'mock 404 ' + p });
   }
-  return { handle, log, courses };
+  return { handle, log, courses, setClip: (on) => { opts.clipPlayer = on; } }; // 영상 영역이 잘리는 화면 (도크 대체 위치 시험용)
 }
 
 module.exports = { createMock };
