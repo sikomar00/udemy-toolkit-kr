@@ -1,5 +1,7 @@
 # Chrome 웹 스토어 등록 준비
 
+순서대로 따라 하려면 [web-store-tutorial.md](web-store-tutorial.md)를 보세요. 이 문서는 준비 상태와 위험 요약입니다.
+
 업로드 파일: `dist/udemy-toolkit-2.0.0.zip` (`udemy-toolkit/` 안의 실행 파일만 담음. DESIGN.md·README.md·테스트는 제외, git에는 올라가지 않음).
 다시 만들 때는 `udemy-toolkit/manifest.json`의 `version`을 올린 뒤 같은 방식으로 압축한다.
 

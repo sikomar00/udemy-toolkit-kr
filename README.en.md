@@ -132,6 +132,7 @@ npm run shots       # screenshots of the mock pages → tests/shots/
 
 ## Notes
 
+- How data is handled is described in the [privacy policy](docs/privacy-policy.md). The Web Store submission steps (Korean) are in [docs/web-store-tutorial.md](docs/web-store-tutorial.md).
 - The extension uses Udemy's website-internal APIs and page structure, not an official API. If Udemy changes them, some features may stop working. Use **Check Page Structure** in the popup to see which ones.
 - Notes, sentences, tags, study stats and the course list are stored only in this browser. Settings (hotkeys and options) may sync to your other computers through your Chrome account. Only if you turn it on, machine translation sends subtitle sentences to Google Translate.
 - The extension's own screens (toolbar buttons, settings, popup, notifications) are in English. The design documents (`udemy-toolkit/README.md`, `udemy-toolkit/DESIGN.md`) are in Korean. The backup file marker `udemy-toolkit-kr` is kept so that older backups still import.
