@@ -12,20 +12,20 @@
     let primary = P.subs.key === `${courseId}:${lectureId}` ? P.subs.primary : null;
     if (!primary) {
       // indicator는 1초쯤에 사라지므로 오래 걸릴 수 있는 불러오기는 토스트로 알린다
-      const t0 = UXK.ui.toast('대본 불러오는 중...', { id: 'uxk-transcript-load', timeout: 0 });
+      const t0 = UXK.ui.toast('Loading transcript...', { id: 'uxk-transcript-load', timeout: 0 });
       try { primary = (await P.loadPrimary(courseId, lectureId)).primary; } finally { t0.close(); }
     }
     if (P.ctx.lectureId !== lectureId) throw P.staleError();
     const cues = primary.cues;
-    if (!cues.length) throw new Error('자막 내용이 비어 있습니다');
+    if (!cues.length) throw new Error('The subtitle file is empty');
     const label = primary.cap.video_label || P.locOf(primary.cap);
-    P.indicator((await UXK.copyText(UXK.vtt.toText(cues))) ? `대본 복사됨 (${label} · ${cues.length}문장)` : '복사 실패');
+    P.indicator((await UXK.copyText(UXK.vtt.toText(cues))) ? `Transcript copied (${label} · ${cues.length} sentences)` : 'Copy failed');
   }
 
   // 자막 메뉴: 언어 선택, 켜기/끄기, 내보내기
   async function openSubsMenu() {
     const wrap = el('div', { class: 'uxk-menu-body' });
-    const onoff = el('label', { class: 'uxk-chk' }, [el('input', { type: 'checkbox', checked: P.S.subs.enabled }), ' 이중 자막 표시']);
+    const onoff = el('label', { class: 'uxk-chk' }, [el('input', { type: 'checkbox', checked: P.S.subs.enabled }), ' Show dual subtitles']);
     wrap.appendChild(onoff);
     let caps = P.subs.captions;
     if (!caps.length && P.ctx.lectureType === 'lecture' && P.ctx.courseId) {
@@ -34,39 +34,37 @@
     const langs = Array.from(new Map(caps.map((c) => [P.locOf(c).slice(0, 2).toLowerCase(), c.video_label || P.locOf(c)])).entries());
     const mk = (label, cur, includeAuto, includeNone) => {
       const s = el('select', { class: 'uxk-input' });
-      if (includeAuto) s.appendChild(el('option', { value: 'auto', text: '자동 (강의 원어)' }));
-      if (includeNone) s.appendChild(el('option', { value: 'none', text: '사용 안 함' }));
+      if (includeAuto) s.appendChild(el('option', { value: 'auto', text: 'Auto (course language)' }));
+      if (includeNone) s.appendChild(el('option', { value: 'none', text: 'None' }));
       langs.forEach(([code, lab]) => s.appendChild(el('option', { value: code, text: `${lab} (${code})` })));
-      if (![...s.options].some((o) => o.value === cur)) s.appendChild(el('option', { value: cur, text: `${cur} (이 강의엔 없음)` }));
+      if (![...s.options].some((o) => o.value === cur)) s.appendChild(el('option', { value: cur, text: `${cur} (not in this course)` }));
       s.value = cur;
       return el('label', { class: 'uxk-field' }, [el('span', { text: label }), s]);
     };
-    const pSel = mk('원문 자막', P.S.subs.primaryLang, true, false);
-    const sSel = mk('보조 자막', P.S.subs.secondaryLang, false, true);
+    const pSel = mk('Primary subtitles', P.S.subs.primaryLang, true, false);
+    const sSel = mk('Secondary subtitles', P.S.subs.secondaryLang, false, true);
     wrap.append(pSel, sSel);
-    wrap.appendChild(el('div', { class: 'uxk-hint', text: caps.length ? `이 강의 자막 ${caps.length}종: ${caps.map((c) => c.video_label || P.locOf(c)).join(', ')}` : '이 강의의 자막 목록을 가져오지 못했습니다.' }));
-    const mt = el('label', { class: 'uxk-chk' }, [el('input', { type: 'checkbox', checked: P.S.subs.translate }), ' 보조 자막이 없으면 기계번역 (옵션에서 권한 허용 필요)']);
-    const shadow = el('label', { class: 'uxk-chk' }, [el('input', { type: 'checkbox', checked: P.S.subs.shadowPause }), ' 따라 말하기: 문장마다 일시정지']);
-    wrap.append(mt, shadow);
+    wrap.appendChild(el('div', { class: 'uxk-hint', text: caps.length ? `${caps.length} caption languages in this course: ${caps.map((c) => c.video_label || P.locOf(c)).join(', ')}` : 'Could not load this course\'s caption list.' }));
+    const mt = el('label', { class: 'uxk-chk' }, [el('input', { type: 'checkbox', checked: P.S.subs.translate }), ' Machine-translate if no secondary subtitles exist (permission must be allowed in Settings)']);
+    wrap.append(mt);
     const exp = el('div', { class: 'uxk-row' }, [
-      el('button', { class: 'uxk-btn', text: '이 강의 자막 내보내기', onclick: () => exportLecture().catch((e) => { if (!e.stale) UXK.ui.toast(e.message, { kind: 'err' }); }) }),
-      el('button', { class: 'uxk-btn', text: '코스 전체 자막 (Markdown)', onclick: () => exportCourseTranscript() }),
+      el('button', { class: 'uxk-btn', text: 'Export this lecture\'s subtitles', onclick: () => exportLecture().catch((e) => { if (!e.stale) UXK.ui.toast(e.message, { kind: 'err' }); }) }),
+      el('button', { class: 'uxk-btn', text: 'Whole-course subtitles (Markdown)', onclick: () => exportCourseTranscript() }),
     ]);
     wrap.appendChild(exp);
-    const ok = await UXK.ui.modal({ title: '자막', body: wrap, width: 520, buttons: [{ label: '닫기', value: false }, { label: '적용', value: true, primary: true }], closeValue: false });
+    const ok = await UXK.ui.modal({ title: 'Subtitles', body: wrap, width: 520, buttons: [{ label: 'Close', value: false }, { label: 'Apply', value: true, primary: true }], closeValue: false });
     if (!ok) return;
     const next = {
       enabled: onoff.querySelector('input').checked,
       primaryLang: pSel.querySelector('select').value,
       secondaryLang: sSel.querySelector('select').value,
       translate: mt.querySelector('input').checked,
-      shadowPause: shadow.querySelector('input').checked,
     };
     if (next.translate && !P.S.subs.translate) {
       const perm = await UXK.bg({ type: 'hasTranslatePermission' });
       if (!perm || !perm.ok || !perm.has) {
         next.translate = false;
-        UXK.ui.toast('기계번역은 설정 페이지에서 켜야 사이트 접근 권한을 허용할 수 있습니다.', { timeout: 8000, actions: [{ label: '설정 열기', onClick: () => UXK.bg({ type: 'openOptions', hash: 'subs' }) }] });
+        UXK.ui.toast('Turn on machine translation on the settings page to grant site access.', { timeout: 8000, actions: [{ label: 'Open settings', onClick: () => UXK.bg({ type: 'openOptions', hash: 'subs' }) }] });
       }
     }
     const langChanged = next.primaryLang !== P.S.subs.primaryLang || next.secondaryLang !== P.S.subs.secondaryLang || next.translate !== P.S.subs.translate;
@@ -81,31 +79,31 @@
     const cues = P.subs.primary.cues;
     const second = P.subs.second.length ? P.subs.second : null;
     const base = UXK.safeFile(`${P.courseTitle()} - ${P.lectureTitle()}`);
-    const wrap = el('div', { class: 'uxk-menu-body' }, [el('div', { class: 'uxk-hint', text: `${cues.length}문장 · 원문 ${P.subs.primary.cap.video_label || P.locOf(P.subs.primary.cap)}${P.subs.secondInfo ? ' · 보조 ' + P.subs.secondInfo.label : ''}` })]);
+    const wrap = el('div', { class: 'uxk-menu-body' }, [el('div', { class: 'uxk-hint', text: `${cues.length} sentences · primary ${P.subs.primary.cap.video_label || P.locOf(P.subs.primary.cap)}${P.subs.secondInfo ? ' · secondary ' + P.subs.secondInfo.label : ''}` })]);
     const act = (label, fn) => el('button', { class: 'uxk-btn', text: label, onclick: fn });
     wrap.appendChild(el('div', { class: 'uxk-row uxk-wrap' }, [
-      act('클립보드 복사 (원문)', async () => UXK.ui.toast((await UXK.copyText(UXK.vtt.toText(cues))) ? '복사됨' : '복사 실패')),
-      act('TXT 원문', () => UXK.download(base + '.txt', UXK.vtt.toText(cues))),
-      second && act('TXT 이중', () => UXK.download(base + '.bilingual.txt', UXK.vtt.toText(cues, second))),
-      act('SRT 원문', () => UXK.download(base + '.srt', UXK.vtt.toSRT(cues))),
-      second && act('SRT 이중', () => UXK.download(base + '.bilingual.srt', UXK.vtt.toSRT(cues, second))),
-      act('Markdown (타임스탬프 링크)', () => UXK.download(base + '.md', `# ${title}\n\n${UXK.vtt.toMarkdown(cues, second, (t) => P.lectureUrl(lectureId, t))}\n`, 'text/markdown;charset=utf-8')),
+      act('Copy to clipboard (primary)', async () => UXK.ui.toast((await UXK.copyText(UXK.vtt.toText(cues))) ? 'Copied' : 'Copy failed')),
+      act('TXT (primary)', () => UXK.download(base + '.txt', UXK.vtt.toText(cues))),
+      second && act('TXT (dual)', () => UXK.download(base + '.bilingual.txt', UXK.vtt.toText(cues, second))),
+      act('SRT (primary)', () => UXK.download(base + '.srt', UXK.vtt.toSRT(cues))),
+      second && act('SRT (dual)', () => UXK.download(base + '.bilingual.srt', UXK.vtt.toSRT(cues, second))),
+      act('Markdown (timestamp links)', () => UXK.download(base + '.md', `# ${title}\n\n${UXK.vtt.toMarkdown(cues, second, (t) => P.lectureUrl(lectureId, t))}\n`, 'text/markdown;charset=utf-8')),
     ]));
-    await UXK.ui.modal({ title: '이 강의 자막 내보내기', body: wrap, width: 560, buttons: [{ label: '닫기', value: true }] });
+    await UXK.ui.modal({ title: 'Export this lecture\'s subtitles', body: wrap, width: 560, buttons: [{ label: 'Close', value: true }] });
   }
 
   P.exportAbort = null;
   async function exportCourseTranscript() {
-    if (!P.ctx.courseId) return UXK.ui.toast('강의 정보를 찾지 못했습니다', { kind: 'err' });
-    if (P.exportAbort) return UXK.ui.toast('이미 내보내는 중입니다');
-    const ok = await UXK.ui.confirm('코스 전체 자막 내보내기', '모든 영상 강의의 자막을 순서대로 받아 Markdown 한 파일로 저장합니다.\n요청 간격을 두고 진행하므로 강의 수에 따라 몇 분 걸릴 수 있습니다. 개인 학습용으로만 사용하세요.', { okLabel: '시작' });
+    if (!P.ctx.courseId) return UXK.ui.toast('Course info not found', { kind: 'err' });
+    if (P.exportAbort) return UXK.ui.toast('Export already in progress');
+    const ok = await UXK.ui.confirm('Export whole-course subtitles', 'Downloads the subtitles of every video lecture in order and saves them as one Markdown file.\nRequests are spaced out, so it may take several minutes depending on the number of lectures. For personal study only.', { okLabel: 'Start' });
     if (!ok) return;
     P.exportAbort = { stop: false };
-    const prog = UXK.ui.toast('커리큘럼 불러오는 중...', { id: 'uxk-course-export', timeout: 0, actions: [{ label: '중지', close: false, onClick: () => { P.exportAbort.stop = true; } }] });
+    const prog = UXK.ui.toast('Loading curriculum...', { id: 'uxk-course-export', timeout: 0, actions: [{ label: 'Stop', close: false, onClick: () => { P.exportAbort.stop = true; } }] });
     try {
       const items = await UXK.api.curriculum(P.ctx.courseId, { withCaptions: true });
       const lectures = items.filter((i) => i._class === 'lecture' && i.asset && /video/i.test(i.asset.asset_type || ''));
-      const out = [`# ${P.courseTitle()}`, '', `> 자막 원문 · 내보낸 날짜 ${UXK.today()} · 개인 학습용`, ''];
+      const out = [`# ${P.courseTitle()}`, '', `> Primary subtitles · exported ${UXK.today()} · for personal study`, ''];
       let chapterTitle = null, done = 0, missing = 0, failedN = 0;
       const chapterOf = new Map();
       let ch = null;
@@ -114,25 +112,25 @@
         if (P.exportAbort.stop) break;
         const chT = chapterOf.get(lec.id);
         if (chT && chT !== chapterTitle) { chapterTitle = chT; out.push(`## ${chT}`, ''); }
-        out.push(`### ${lec.title}`, '', `[강의로 이동](${P.lectureUrl(lec.id)})`, '');
+        out.push(`### ${lec.title}`, '', `[Go to lecture](${P.lectureUrl(lec.id)})`, '');
         let caps = ((lec.asset && lec.asset.captions) || []).filter((c) => c.url);
         if (!caps.length) {
           try { const j = await UXK.api.lecture(P.ctx.courseId, lec.id); caps = ((j && j.asset && j.asset.captions) || []).filter((c) => c.url); } catch (e) {}
           await UXK.sleep(500);
         }
         const p = await P.choosePrimary(caps);
-        if (!p) { out.push('_자막 없음_', ''); missing++; }
+        if (!p) { out.push('_No subtitles_', ''); missing++; }
         else {
-          try { out.push(UXK.vtt.toText(UXK.vtt.parse(await P.fetchCaption(p.url))), ''); } catch (e) { out.push('_자막을 가져오지 못함_', ''); failedN++; }
+          try { out.push(UXK.vtt.toText(UXK.vtt.parse(await P.fetchCaption(p.url))), ''); } catch (e) { out.push('_Could not fetch subtitles_', ''); failedN++; }
         }
         done++;
-        prog.update(`코스 자막 내보내는 중... ${done} / ${lectures.length}`, { timeout: 0 });
+        prog.update(`Exporting course subtitles... ${done} / ${lectures.length}`, { timeout: 0 });
         await UXK.sleep(300 + Math.random() * 300);
       }
       UXK.download(`${UXK.safeFile(P.courseTitle())}_transcript.md`, out.join('\n'), 'text/markdown;charset=utf-8');
-      prog.update(`${P.exportAbort.stop ? '중지됨 · ' : ''}강의 ${done}개 저장${missing ? ` · 자막 없음 ${missing}` : ''}${failedN ? ` · 가져오기 실패 ${failedN}` : ''}`, { timeout: 7000, actions: [] });
+      prog.update(`${P.exportAbort.stop ? 'Stopped · ' : ''}${done} lectures saved${missing ? ` · ${missing} without subtitles` : ''}${failedN ? ` · ${failedN} failed to fetch` : ''}`, { timeout: 7000, actions: [] });
     } catch (e) {
-      prog.update('코스 자막 내보내기 실패: ' + e.message, { timeout: 7000, actions: [], kind: 'err' });
+      prog.update('Course subtitle export failed: ' + e.message, { timeout: 7000, actions: [], kind: 'err' });
     } finally {
       P.exportAbort = null;
     }

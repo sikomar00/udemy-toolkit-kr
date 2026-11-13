@@ -11,7 +11,7 @@
   const build = (path, val) => path.split('.').reduceRight((acc, k) => ({ [k]: acc }), val);
   const savedEl = $('#saved');
   let savedT = null;
-  const flash = (msg = '저장됨') => { savedEl.textContent = msg; savedEl.classList.add('show'); clearTimeout(savedT); savedT = setTimeout(() => savedEl.classList.remove('show'), 1000); };
+  const flash = (msg = 'Saved') => { savedEl.textContent = msg; savedEl.classList.add('show'); clearTimeout(savedT); savedT = setTimeout(() => savedEl.classList.remove('show'), 1000); };
 
   // ---------------- 일반 설정 바인딩 ----------------
   let mtGranted = true; // 이 PC에 번역 권한이 있는지 (없으면 설정값과 상관없이 꺼진 것으로 표시)
@@ -54,7 +54,7 @@
     if (n.checked) {
       let ok = false;
       try { ok = await chrome.permissions.request({ origins: ['https://translate.googleapis.com/*'] }); } catch (err) { ok = false; }
-      if (!ok) { n.checked = false; flash('권한이 허용되지 않아 끔'); return; }
+      if (!ok) { n.checked = false; flash('Permission not granted; turned off'); return; }
     } else {
       try { await chrome.permissions.remove({ origins: ['https://translate.googleapis.com/*'] }); } catch (err) {}
     }
@@ -75,7 +75,7 @@
     body.innerHTML = '';
     Object.keys(UXK.DEFAULTS.hotkeys).forEach((action) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${esc(UXK.ACTION_LABELS[action] || action)}</td><td><input type="text" readonly class="hk" data-hk="${action}" aria-label="${esc(UXK.ACTION_LABELS[action] || action)} 단축키"></td><td class="warn" data-warn="${action}"></td>`;
+      tr.innerHTML = `<td>${esc(UXK.ACTION_LABELS[action] || action)}</td><td><input type="text" readonly class="hk" data-hk="${action}" aria-label="${esc(UXK.ACTION_LABELS[action] || action)} hotkey"></td><td class="warn" data-warn="${action}"></td>`;
       body.appendChild(tr);
     });
     refreshHotkeys();
@@ -88,13 +88,13 @@
     $$('[data-hk]').forEach((inp) => {
       const a = inp.dataset.hk;
       const v = S.hotkeys[a];
-      inp.value = v || '(없음)';
+      inp.value = v || '(none)';
       const k = norm(v);
       const warn = $(`[data-warn="${a}"]`);
-      warn.textContent = !k ? '' : RESERVED.has(k) ? 'Udemy 기본 키와 겹침' : counts.get(k) > 1 ? '다른 기능과 겹침' : '';
+      warn.textContent = !k ? '' : RESERVED.has(k) ? 'Clashes with a Udemy key' : counts.get(k) > 1 ? 'Clashes with another action' : '';
     });
   }
-  document.addEventListener('focusin', (e) => { if (e.target.matches('[data-hk]')) { e.target.classList.add('listening'); e.target.value = '키를 누르세요'; } });
+  document.addEventListener('focusin', (e) => { if (e.target.matches('[data-hk]')) { e.target.classList.add('listening'); e.target.value = 'Press a key'; } });
   document.addEventListener('focusout', (e) => { if (e.target.matches('[data-hk]')) { e.target.classList.remove('listening'); refreshHotkeys(); } });
   document.addEventListener('keydown', async (e) => {
     const inp = e.target;
@@ -107,13 +107,13 @@
     else {
       if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
       v = UXK.eventToHotkey(e);
-      if (!v) { inp.value = '지원하지 않는 키'; return; }
+      if (!v) { inp.value = 'Unsupported key'; return; }
     }
     S = await UXK.saveSettings({ hotkeys: { [inp.dataset.hk]: v } });
     flash();
     inp.blur();
   });
-  $('#hk-reset').onclick = async () => { S = await UXK.saveSettings({ hotkeys: UXK.DEFAULTS.hotkeys }); refreshHotkeys(); flash('기본값으로 되돌림'); };
+  $('#hk-reset').onclick = async () => { S = await UXK.saveSettings({ hotkeys: UXK.DEFAULTS.hotkeys }); refreshHotkeys(); flash('Defaults restored'); };
   $('#open-shortcuts').onclick = () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
   renderHotkeys();
 
@@ -124,9 +124,9 @@
   const courseById = new Map();
   caches.forEach((c) => (c.data || []).forEach((x) => { if (!courseById.has(String(x.id))) courseById.set(String(x.id), { ...x, host: c.host }); }));
   $('#lib-cache').textContent = caches.length
-    ? '강의 목록 캐시: ' + caches.map((c) => `${c.host} ${UXK.fmtNum((c.data || []).length)}개 (${new Date(c.t).toLocaleString('ko-KR')} 기준)`).join(' · ')
-    : '강의 목록 캐시 없음 (내 학습 페이지를 열면 생성)';
-  const titleOf = (id) => (courseById.get(String(id)) || {}).title || `코스 ${id}`;
+    ? 'Course-list cache: ' + caches.map((c) => `${c.host} ${UXK.fmtNum((c.data || []).length)} courses (as of ${new Date(c.t).toLocaleString('en-US')})`).join(' · ')
+    : 'No course-list cache (created when you open My Learning)';
+  const titleOf = (id) => (courseById.get(String(id)) || {}).title || `Course ${id}`;
   const lectureLink = (courseId, lectureId, t) => {
     const c = courseById.get(String(courseId));
     const host = (c && c.host) || 'www.udemy.com';
@@ -147,27 +147,27 @@
     while (i < 3650 && meets(dayKey(i))) { streak++; i++; } // 잘못된 목표값이 와도 끝나도록 10년 상한
     const today = secOf(dayKey(0));
     $('#kpis').innerHTML = [
-      ['오늘', `${Math.round(today / 60)}분${goal ? ` / ${S.stats.dailyGoalMin}분` : ''}`],
-      ['최근 7일', UXK.fmtDur(sum(7))],
-      ['최근 30일', UXK.fmtDur(sum(30))],
-      ['연속 달성', `${streak}일`],
+      ['Today', `${Math.round(today / 60)} min${goal ? ` / ${S.stats.dailyGoalMin} min` : ''}`],
+      ['Last 7 days', UXK.fmtDur(sum(7))],
+      ['Last 30 days', UXK.fmtDur(sum(30))],
+      ['Goal streak', `${streak} days`],
     ].map(([a, b]) => `<div class="kpi"><span class="muted">${a}</span><b>${b}</b></div>`).join('');
     const N = 14;
     const vals = Array.from({ length: N }, (_, k) => secOf(dayKey(N - 1 - k)));
     const max = Math.max(goal, ...vals, 60);
-    $('#bars').innerHTML = vals.map((v) => `<div class="b ${goal && v >= goal ? 'goal' : ''}" style="height:${Math.max(2, (v / max) * 100)}%" title="${Math.round(v / 60)}분"></div>`).join('');
+    $('#bars').innerHTML = vals.map((v) => `<div class="b ${goal && v >= goal ? 'goal' : ''}" style="height:${Math.max(2, (v / max) * 100)}%" title="${Math.round(v / 60)} min"></div>`).join('');
     $('#bars-labels').innerHTML = Array.from({ length: N }, (_, k) => `<span>${dayKey(N - 1 - k).slice(5)}</span>`).join('');
     const per = new Map();
     for (let k = 0; k < 7; k++) { const d = days[dayKey(k)]; if (d && d.courses) Object.entries(d.courses).forEach(([id, s]) => per.set(id, (per.get(id) || 0) + s)); }
     const rows = [...per.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
-    $('#stat-courses').innerHTML = rows.length ? rows.map(([id, s]) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${UXK.fmtDur(s)}</td></tr>`).join('') : '<tr><td colspan="2" class="muted">기록 없음</td></tr>';
+    $('#stat-courses').innerHTML = rows.length ? rows.map(([id, s]) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${UXK.fmtDur(s)}</td></tr>`).join('') : '<tr><td colspan="2" class="muted">No records</td></tr>';
     $('#stats-csv').onclick = () => {
       const lines = ['date,minutes'];
       Object.keys(days).sort().forEach((k) => lines.push(`${k},${Math.round(days[k].sec / 60)}`));
       UXK.download(`udemy-study-${UXK.today()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
     };
   }
-  $('#stats-clear').onclick = async () => { if (confirm('학습 기록을 모두 지울까요?')) { await UXK.local.set(UXK.KEYS.stats, { days: {} }); renderStats(); } };
+  $('#stats-clear').onclick = async () => { if (confirm('Clear all study stats?')) { await UXK.local.set(UXK.KEYS.stats, { days: {} }); renderStats(); } };
   renderStats();
 
   // ---------------- 문장 수집함 ----------------
@@ -181,8 +181,8 @@
     const list = filteredSentences();
     $('#sent-body').innerHTML = list.slice(0, 500).map((s) => `<tr><td><input type="checkbox" data-sid="${esc(s.id)}" ${selected.has(s.id) ? 'checked' : ''}></td>
       <td>${esc(s.text)}${s.trans ? `<div class="muted">${esc(s.trans)}</div>` : ''}</td>
-      <td class="muted"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.lectureTitle || '')} · ${UXK.fmtClock(s.t)}</a><br>${esc(s.courseTitle || '')}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">저장된 문장이 없습니다</td></tr>';
-    $('#sent-count').textContent = `총 ${sentences.length}개${list.length !== sentences.length ? ` · 검색 결과 ${list.length}개` : ''}${list.length > 500 ? ' · 화면에는 최근 500개만 표시 (내보내기는 전체)' : ''}`;
+      <td class="muted"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.lectureTitle || '')} · ${UXK.fmtClock(s.t)}</a><br>${esc(s.courseTitle || '')}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">No saved sentences</td></tr>';
+    $('#sent-count').textContent = `${sentences.length} total${list.length !== sentences.length ? ` · ${list.length} match the search` : ''}${list.length > 500 ? ' · only the latest 500 are shown (exports include all)' : ''}`;
   }
   $('#sent-q').addEventListener('input', renderSentences);
   $('#sent-body').addEventListener('change', (e) => { const id = e.target.dataset.sid; if (!id) return; e.target.checked ? selected.add(id) : selected.delete(id); });
@@ -196,13 +196,13 @@
   };
   $('#sent-csv').onclick = () => {
     const q = UXK.csvCell;
-    const lines = ['문장,번역,코스,강의,시각,링크,저장일'];
+    const lines = ['Sentence,Translation,Course,Lecture,Time,Link,Saved on'];
     filteredSentences().reverse().forEach((s) => lines.push([q(s.text), q(s.trans), q(s.courseTitle), q(s.lectureTitle), q(UXK.fmtClock(s.t)), q(s.url), q(s.created)].join(',')));
     UXK.download(`udemy-sentences-${UXK.today()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
   };
   $('#sent-del').onclick = async () => {
-    if (!selected.size) return flash('선택된 문장이 없습니다');
-    if (!confirm(`${selected.size}개 문장을 삭제할까요?`)) return;
+    if (!selected.size) return flash('No sentences selected');
+    if (!confirm(`Delete ${selected.size} sentences?`)) return;
     sentences = await UXK.local.update(UXK.KEYS.sentences, (arr) => (arr || []).filter((s) => !selected.has(s.id)), []);
     selected.clear();
     renderSentences();
@@ -213,7 +213,7 @@
   async function renderNotes() {
     const all = (await UXK.local.get(UXK.KEYS.notes, {})) || {};
     const ids = Object.keys(all).filter((k) => all[k] && all[k].length);
-    $('#notes-body').innerHTML = ids.length ? ids.map((id) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${all[id].length}</td><td><button data-note-md="${esc(id)}">Markdown</button></td></tr>`).join('') : '<tr><td colspan="3" class="muted">메모 없음</td></tr>';
+    $('#notes-body').innerHTML = ids.length ? ids.map((id) => `<tr><td>${esc(titleOf(id))}</td><td class="n">${all[id].length}</td><td><button data-note-md="${esc(id)}">Markdown</button></td></tr>`).join('') : '<tr><td colspan="3" class="muted">No notes</td></tr>';
     return all;
   }
   const notesMd = (all, ids) => {
@@ -237,7 +237,7 @@
   $('#notes-all').onclick = async () => {
     notesAll = await renderNotes();
     const ids = Object.keys(notesAll).filter((k) => notesAll[k] && notesAll[k].length);
-    if (!ids.length) return flash('메모가 없습니다');
+    if (!ids.length) return flash('No notes');
     UXK.download(`udemy-notes-${UXK.today()}.md`, notesMd(notesAll, ids), 'text/markdown;charset=utf-8');
   };
 
@@ -257,26 +257,26 @@
     if (!f) return;
     try {
       const j = JSON.parse(await f.text());
-      if (!j || j.app !== 'udemy-toolkit-kr') throw new Error('이 확장의 백업 파일이 아닙니다');
+      if (!j || j.app !== 'udemy-toolkit-kr') throw new Error('This is not a backup file from this extension');
       const data = j.data || {};
       // 쓰기 전에 전부 검사: 잘못된 파일이 저장소를 일부만 덮어쓰지 않게
-      for (const k of BACKUP_KEYS) if (data[k] != null && !hasShape(k, data[k])) throw new Error(`백업 파일의 "${k}" 항목 형식이 올바르지 않습니다`);
-      if (!confirm('백업으로 현재 데이터를 덮어씁니다. 진행할까요?')) return;
-      for (const k of BACKUP_KEYS) if (data[k] != null && !(await UXK.local.set(UXK.KEYS[k], data[k]))) throw new Error(`"${k}"를 저장하지 못했습니다`);
+      for (const k of BACKUP_KEYS) if (data[k] != null && !hasShape(k, data[k])) throw new Error(`The "${k}" entry in the backup file has an invalid format`);
+      if (!confirm('This overwrites your current data with the backup. Continue?')) return;
+      for (const k of BACKUP_KEYS) if (data[k] != null && !(await UXK.local.set(UXK.KEYS[k], data[k]))) throw new Error(`Could not save "${k}"`);
       if (j.settings) S = await UXK.saveSettings(j.settings); // 기본값과 모양·자료형이 다른 값은 saveSettings가 걸러낸다
-      flash('복원 완료');
+      flash('Restore complete');
       setTimeout(() => location.reload(), 600);
-    } catch (err) { alert('복원 실패: ' + err.message); } finally { e.target.value = ''; } // 같은 파일을 다시 골라도 change가 일어나게
+    } catch (err) { alert('Restore failed: ' + err.message); } finally { e.target.value = ''; } // 같은 파일을 다시 골라도 change가 일어나게
   });
   $('#clear-cache').onclick = async () => {
     const all = await chrome.storage.local.get(null);
     const keys = Object.keys(all).filter((k) => k.startsWith(UXK.KEYS.coursesPrefix) || k.startsWith('uxk_fields_ok') || k.startsWith('uxk_refresh_fail') || k.startsWith('uxk_cur_'));
     await chrome.storage.local.remove(keys);
-    flash(`캐시 ${keys.length}개 삭제`);
-    $('#lib-cache').textContent = '강의 목록 캐시 없음 (내 학습 페이지를 열면 생성)';
+    flash(`${keys.length} cache entries deleted`);
+    $('#lib-cache').textContent = 'No course-list cache (created when you open My Learning)';
   };
   $('#reset-settings').onclick = async () => {
-    if (!confirm('모든 설정을 기본값으로 되돌릴까요? (메모·문장·기록은 유지)')) return;
+    if (!confirm('Reset all settings to defaults? (Notes, sentences and stats are kept)')) return;
     await chrome.storage.sync.remove('uxk_settings');
     location.reload();
   };

@@ -78,7 +78,7 @@
         // 무한 반복 방지: 5초 쉬었다가 사용자가 지정한 속도를 다시 적용 (지정 속도를 Udemy 값으로 바꾸지 않음)
         this.cooldownUntil = now + 5000;
         this.reapplies = [];
-        if (!this.warned) { this.warned = true; UXK.ui.toast('Udemy가 속도를 계속 되돌리고 있어 5초 뒤 다시 적용합니다.', { timeout: 5000 }); }
+        if (!this.warned) { this.warned = true; UXK.ui.toast('Udemy keeps resetting the speed; re-applying in 5 s.', { timeout: 5000 }); }
         setTimeout(() => this.applyNow(), 5100);
         return;
       }
@@ -88,7 +88,7 @@
   };
   function updateSpeedLabel() {
     if (P.speedLabel) P.speedLabel.textContent = `${speed.intended.toFixed(2)}x`;
-    P.updateDock();
+    P.updateToolbar();
   }
   function applySpeedSoon() {
     speed.applyNow();

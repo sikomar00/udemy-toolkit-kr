@@ -47,7 +47,7 @@
       mark.setAttribute('data-uxk-owned', String(c.id));
       if (root) root.classList.toggle('uxk-owned-hidden', !!S.catalog.hideOwned); // 숨기기는 카드로 확인된 경우만
       if (S.catalog.ownedBadges && !(root || a.parentElement || a).querySelector('.uxk-owned')) {
-        const badge = el('span', { class: 'uxk-owned', title: '이미 구매한 강의 (Udemy Toolkit)' }, [`보유 중 · 진행 ${Math.min(100, c.progress)}%${c.archived ? ' · 보관됨' : ''}`]);
+        const badge = el('span', { class: 'uxk-owned', title: 'Course you already own (Toolkit for Udemy)' }, [`Owned · ${Math.min(100, c.progress)}% done${c.archived ? ' · archived' : ''}`]);
         (a.querySelector('h3, h2, [data-purpose="course-title-url"]') || a).after(badge);
       }
     });
@@ -75,10 +75,10 @@
     }
     const parts = [];
     if (owned) {
-      parts.push(`<b>이미 보유한 강의</b> · 진행 ${Math.min(100, Number(owned.progress) || 0)}%${owned.archived ? ' · 보관됨' : ''}${owned.enrolled ? ` · 구매 ${esc(owned.enrolled)}` : ''}`);
-      parts.push(`<a class="uxk-btn uxk-btn-primary" href="/course-dashboard-redirect/?course_id=${Number(owned.id) || 0}">강의 이어보기</a>`);
+      parts.push(`<b>You own this course</b> · ${Math.min(100, Number(owned.progress) || 0)}% done${owned.archived ? ' · archived' : ''}${owned.enrolled ? ` · purchased ${esc(owned.enrolled)}` : ''}`);
+      parts.push(`<a class="uxk-btn uxk-btn-primary" href="/course-dashboard-redirect/?course_id=${Number(owned.id) || 0}">Continue course</a>`);
     }
-    infoBox.innerHTML = `<div class="uxk-info-main">${parts.join(' ')}</div><div class="uxk-info-extra">정보 불러오는 중...</div><button class="uxk-info-x" title="닫기">×</button>`;
+    infoBox.innerHTML = `<div class="uxk-info-main">${parts.join(' ')}</div><div class="uxk-info-extra">Loading info...</div><button class="uxk-info-x" title="Close">×</button>`;
     infoBox.querySelector('.uxk-info-x').onclick = () => { infoBox.remove(); infoBox = null; };
     if (!courseId) return;
     try {
@@ -86,15 +86,15 @@
       if (!infoBox || shownFor !== slug) return; // 기다리는 동안 닫았거나 다른 강의로 이동함
       const caps = Array.isArray(j.caption_languages) ? j.caption_languages : [];
       const extra = [
-        j.created ? `최초 출시 ${esc(String(j.created).slice(0, 10))}` : '',
-        j.last_update_date ? `최근 업데이트 ${esc(j.last_update_date)}` : '',
-        j.content_length_video ? `영상 ${UXK.fmtDur(j.content_length_video)}` : '',
-        j.num_reviews ? `리뷰 ${UXK.fmtNum(j.num_reviews)}` : '',
-        caps.length ? `자막 ${caps.length}종: ${caps.slice(0, 12).map(esc).join(', ')}${caps.length > 12 ? ' 외' : ''}` : (j.has_closed_caption === false ? '자막 없음' : ''),
+        j.created ? `First published ${esc(String(j.created).slice(0, 10))}` : '',
+        j.last_update_date ? `Last updated ${esc(j.last_update_date)}` : '',
+        j.content_length_video ? `Video ${UXK.fmtDur(j.content_length_video)}` : '',
+        j.num_reviews ? `${UXK.fmtNum(j.num_reviews)} reviews` : '',
+        caps.length ? `${caps.length} caption languages: ${caps.slice(0, 12).map(esc).join(', ')}${caps.length > 12 ? ' …' : ''}` : (j.has_closed_caption === false ? 'No captions' : ''),
       ].filter(Boolean).join(' · ');
-      infoBox.querySelector('.uxk-info-extra').innerHTML = extra || '추가 정보 없음';
+      infoBox.querySelector('.uxk-info-extra').innerHTML = extra || 'No extra info';
     } catch (e) {
-      if (infoBox && shownFor === slug) infoBox.querySelector('.uxk-info-extra').textContent = '추가 정보를 가져오지 못했습니다';
+      if (infoBox && shownFor === slug) infoBox.querySelector('.uxk-info-extra').textContent = 'Could not load extra info';
     }
   }
 

@@ -3,110 +3,108 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Udemy Toolkit 설정</title>
+<title>Toolkit for Udemy – Settings</title>
 <link rel="stylesheet" href="pages.css">
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><h1>Udemy Toolkit KR</h1><span class="muted" id="ver"></span><span class="grow"></span><span class="muted">변경 사항은 바로 저장되고 열린 Udemy 탭에 즉시 반영됩니다.</span></header>
+  <header class="top"><h1>Toolkit for Udemy</h1><span class="muted" id="ver"></span><span class="grow"></span><span class="muted">Changes are saved immediately and applied to open Udemy tabs.</span></header>
   <nav>
-    <a href="#play">재생</a><a href="#keys">단축키</a><a href="#subs">자막 · 언어 학습</a><a href="#lib">내 학습 · 검색</a>
-    <a href="#stats">학습 기록</a><a href="#sent">문장 수집함</a><a href="#notes">메모</a><a href="#data">백업 · 초기화</a>
+    <a href="#play">Playback</a><a href="#keys">Hotkeys</a><a href="#subs">Subtitles &amp; language learning</a><a href="#lib">My Learning &amp; search</a>
+    <a href="#stats">Study stats</a><a href="#sent">Saved sentences</a><a href="#notes">Notes</a><a href="#data">Backup &amp; reset</a>
   </nav>
   <main>
     <section class="card" id="play">
-      <h2>재생</h2>
-      <label class="opt"><span>속도 기능 사용</span><input type="checkbox" data-k="speed.enabled"></label>
-      <label class="opt"><span>기본 속도<span class="desc">처음 여는 코스에 적용</span></span><input type="number" min="0.25" max="16" step="0.05" data-k="speed.default"></label>
-      <label class="opt"><span>속도 단계 (D / S)</span><select data-k="speed.step"><option value="0.05">0.05</option><option value="0.1">0.1</option><option value="0.25">0.25</option><option value="0.5">0.5</option></select></label>
-      <label class="opt"><span>최대 속도<span class="desc">브라우저는 16배까지 지원. 4배 이상은 소리가 끊기거나 꺼질 수 있음</span></span><input type="number" min="1" max="16" step="0.5" data-k="speed.max"></label>
-      <label class="opt"><span>속도 기억 방식</span><select data-k="speed.remember"><option value="course">코스별로 기억</option><option value="global">모든 코스 공통</option></select></label>
-      <label class="opt"><span>Udemy가 속도를 되돌리면 다시 적용<span class="desc">강의가 바뀔 때 Udemy가 속도를 초기화하는 경우 대비. Udemy 자체 속도 메뉴로 바꾼 값은 그대로 채택</span></span><input type="checkbox" data-k="speed.enforce"></label>
-      <label class="opt"><span>속도 변경 시 화면 표시</span><input type="checkbox" data-k="speed.overlay"></label>
-      <label class="opt"><span>Z / X 이동 시간(초)<span class="desc">Udemy 기본 ←/→ 는 5초</span></span><input type="number" min="1" max="120" step="1" data-k="speed.seekSec"></label>
-      <label class="opt"><span>영상 아래 도구 줄·자막 영역<span class="desc">영상 바로 아래에 항상 보이는 줄에서 이중 자막·따라 말하기·대본 복사 등을 한 번 클릭으로 켜고 끕니다. 자막도 영상 위가 아니라 이 줄 위의 자막 영역에 나와 영상을 가리지 않습니다. 전체화면에서는 영상 위 도구 막대와 자막을 씁니다.</span></span><input type="checkbox" data-k="player.dock"></label>
-      <label class="opt"><span>영상 위 도구 막대 (전체화면에서 사용, 속도·PiP·캡처·메모·자막)</span><input type="checkbox" data-k="player.toolbar"></label>
-      <label class="opt"><span>남은 시간 표시 (왼쪽 아래, 섹션 제목 옆)</span><input type="checkbox" data-k="player.remaining"></label>
-      <label class="opt"><span>섹션 전체 완료/미완료 버튼</span><input type="checkbox" data-k="player.sectionToggles"></label>
-      <label class="opt"><span>넓게 보기 (영상 높이 제한 해제, 실험적)</span><input type="checkbox" data-k="player.theater"></label>
-      <label class="opt"><span>메모 작성 중 영상 일시정지</span><input type="checkbox" data-k="player.notePause"></label>
-      <label class="opt"><span>다크 모드 (페이지 색 반전, 실험적)</span><input type="checkbox" data-k="ui.darkMode"></label>
+      <h2>Playback</h2>
+      <label class="opt"><span>Enable speed control</span><input type="checkbox" data-k="speed.enabled"></label>
+      <label class="opt"><span>Default speed<span class="desc">Applied to courses you open for the first time</span></span><input type="number" min="0.25" max="16" step="0.05" data-k="speed.default"></label>
+      <label class="opt"><span>Speed step (D / S)</span><select data-k="speed.step"><option value="0.05">0.05</option><option value="0.1">0.1</option><option value="0.25">0.25</option><option value="0.5">0.5</option></select></label>
+      <label class="opt"><span>Max speed<span class="desc">Browsers support up to 16x. Above 4x the audio may stutter or mute</span></span><input type="number" min="1" max="16" step="0.5" data-k="speed.max"></label>
+      <label class="opt"><span>Remember speed</span><select data-k="speed.remember"><option value="course">Per course</option><option value="global">Same for all courses</option></select></label>
+      <label class="opt"><span>Re-apply speed if Udemy resets it<span class="desc">For when Udemy resets the speed on lecture change. Speeds chosen in Udemy's own menu are respected</span></span><input type="checkbox" data-k="speed.enforce"></label>
+      <label class="opt"><span>Show speed on screen when it changes</span><input type="checkbox" data-k="speed.overlay"></label>
+      <label class="opt"><span>Z / X seek time (seconds)<span class="desc">Udemy's own ←/→ seeks 5 seconds</span></span><input type="number" min="1" max="120" step="1" data-k="speed.seekSec"></label>
+      <label class="opt"><span>Toolbar below video<span class="desc">An always-visible bar attached right below the video: speed, Dual Subs / Loop toggles (highlighted when on), Copy Transcript, Note, Capture, PiP, Wide and Subtitles in one click.</span></span><input type="checkbox" data-k="player.toolbar"></label>
+      <label class="opt"><span>Show time left (next to the section title)</span><input type="checkbox" data-k="player.remaining"></label>
+      <label class="opt"><span>Mark whole section complete / incomplete buttons</span><input type="checkbox" data-k="player.sectionToggles"></label>
+      <label class="opt"><span>Wide view (remove the video height limit, experimental)</span><input type="checkbox" data-k="player.theater"></label>
+      <label class="opt"><span>Pause video while writing a note</span><input type="checkbox" data-k="player.notePause"></label>
+      <label class="opt"><span>Dark mode (inverts page colors, experimental)</span><input type="checkbox" data-k="ui.darkMode"></label>
     </section>
 
     <section class="card" id="keys">
-      <h2>단축키</h2>
-      <p class="muted">칸을 클릭하고 원하는 키를 누르세요. Backspace는 해제, Esc는 취소입니다. 한글 입력 상태에서도 키 위치 기준으로 동작합니다.<br>
-        Udemy 기본 키(Space, ←/→, Shift+←/→, ↑/↓, F, M, B, ?)와 겹치면 경고합니다.</p>
-      <table><thead><tr><th>기능</th><th>키</th><th></th></tr></thead><tbody id="hk-body"></tbody></table>
-      <div class="row" style="margin-top:10px"><button id="hk-reset">기본값으로</button><span class="grow"></span>
-        <button id="open-shortcuts">탭 밖에서도 쓰는 확장 단축키 설정 (chrome://extensions/shortcuts)</button></div>
+      <h2>Hotkeys</h2>
+      <p class="muted">Click a field and press the key you want. Backspace clears it, Esc cancels. Keys are matched by position, so they also work with a non-Latin input method on.<br>
+        A warning is shown if a key clashes with Udemy's own keys (Space, ←/→, Shift+←/→, ↑/↓, F, M, B, ?).</p>
+      <table><thead><tr><th>Action</th><th>Key</th><th></th></tr></thead><tbody id="hk-body"></tbody></table>
+      <div class="row" style="margin-top:10px"><button id="hk-reset">Restore defaults</button><span class="grow"></span>
+        <button id="open-shortcuts">Global shortcuts that work outside the tab (chrome://extensions/shortcuts)</button></div>
     </section>
 
     <section class="card" id="subs">
-      <h2>자막 · 언어 학습</h2>
-      <label class="opt"><span>이중 자막 표시 (V)</span><input type="checkbox" data-k="subs.enabled"></label>
-      <label class="opt"><span>원문 자막 언어</span>
-        <select data-k="subs.primaryLang"><option value="auto">자동 (강의 원어)</option><option value="en">영어</option><option value="es">스페인어</option><option value="ko">한국어</option><option value="ja">일본어</option><option value="zh">중국어</option><option value="fr">프랑스어</option><option value="de">독일어</option><option value="pt">포르투갈어</option></select></label>
-      <label class="opt"><span>보조 자막 언어<span class="desc">강의에 그 언어 자막(Udemy 자동 번역 포함)이 있으면 사용</span></span>
-        <select data-k="subs.secondaryLang"><option value="none">사용 안 함</option><option value="ko">한국어</option><option value="en">영어</option><option value="es">스페인어</option><option value="ja">일본어</option><option value="zh">중국어</option><option value="fr">프랑스어</option><option value="de">독일어</option><option value="pt">포르투갈어</option></select></label>
-      <label class="opt"><span>보조 자막이 없으면 기계번역<span class="desc">구글 번역의 비공식 엔드포인트(translate.googleapis.com)로 자막 문장을 보냅니다. 언제든 막힐 수 있고, 켜면 해당 사이트 접근 권한을 요청합니다.</span></span><input type="checkbox" data-k="subs.translate" id="mt-toggle"></label>
-      <label class="opt"><span>글자 크기 <b id="v-font"></b></span><input type="range" min="14" max="44" step="1" data-k="subs.fontSize"></label>
-      <label class="opt"><span>세로 위치 (아래에서 %) <b id="v-bottom"></b><span class="desc">영상 위에서 자막을 드래그해도 바뀝니다</span></span><input type="range" min="0" max="80" step="1" data-k="subs.bottom"></label>
-      <label class="opt"><span>배경 진하기 <b id="v-bg"></b></span><input type="range" min="0" max="1" step="0.05" data-k="subs.bgOpacity"></label>
-      <label class="opt"><span>원문 줄 표시</span><input type="checkbox" data-k="subs.showPrimary"></label>
-      <label class="opt"><span>보조 줄 표시</span><input type="checkbox" data-k="subs.showSecondary"></label>
-      <label class="opt"><span>이중 자막을 켜면 Udemy 기본 자막 숨기기</span><input type="checkbox" data-k="subs.hideNative"></label>
-      <label class="opt"><span>따라 말하기: 문장마다 일시정지 (W)</span><input type="checkbox" data-k="subs.shadowPause"></label>
-      <p class="muted">문장 단위 기능: Q 다시 듣기 · L 문장 반복 · A 구간 반복 · Y 복사 · K 문장 수집함 저장</p>
+      <h2>Subtitles &amp; language learning</h2>
+      <label class="opt"><span>Show dual subtitles (V)</span><input type="checkbox" data-k="subs.enabled"></label>
+      <label class="opt"><span>Primary subtitle language</span>
+        <select data-k="subs.primaryLang"><option value="auto">Auto (course language)</option><option value="en">English</option><option value="es">Spanish</option><option value="ko">Korean</option><option value="ja">Japanese</option><option value="zh">Chinese</option><option value="fr">French</option><option value="de">German</option><option value="pt">Portuguese</option></select></label>
+      <label class="opt"><span>Secondary subtitle language<span class="desc">Used if the course has captions in that language (including Udemy auto-translations)</span></span>
+        <select data-k="subs.secondaryLang"><option value="none">None</option><option value="ko">Korean</option><option value="en">English</option><option value="es">Spanish</option><option value="ja">Japanese</option><option value="zh">Chinese</option><option value="fr">French</option><option value="de">German</option><option value="pt">Portuguese</option></select></label>
+      <label class="opt"><span>Machine-translate when no secondary captions exist<span class="desc">Sends subtitle sentences to Google Translate's unofficial endpoint (translate.googleapis.com). It may be blocked at any time, and turning it on asks for permission to access that site.</span></span><input type="checkbox" data-k="subs.translate" id="mt-toggle"></label>
+      <label class="opt"><span>Font size <b id="v-font"></b></span><input type="range" min="14" max="44" step="1" data-k="subs.fontSize"></label>
+      <label class="opt"><span>Vertical position (% from bottom) <b id="v-bottom"></b><span class="desc">You can also drag the subtitles over the video</span></span><input type="range" min="0" max="80" step="1" data-k="subs.bottom"></label>
+      <label class="opt"><span>Background opacity <b id="v-bg"></b></span><input type="range" min="0" max="1" step="0.05" data-k="subs.bgOpacity"></label>
+      <label class="opt"><span>Show primary line</span><input type="checkbox" data-k="subs.showPrimary"></label>
+      <label class="opt"><span>Show secondary line</span><input type="checkbox" data-k="subs.showSecondary"></label>
+      <label class="opt"><span>Hide Udemy's own captions when dual subtitles are on</span><input type="checkbox" data-k="subs.hideNative"></label>
+      <p class="muted">Sentence tools: Q replay · L loop · Y copy · K save to collection</p>
     </section>
 
     <section class="card" id="lib">
-      <h2>내 학습 · 검색 페이지</h2>
-      <label class="opt"><span>내 학습 페이지 "내 강의 도구" 버튼</span><input type="checkbox" data-k="library.panel"></label>
-      <label class="opt"><span>강의 카드에 별점·시간·업데이트 배지</span><input type="checkbox" data-k="library.cardBadges"></label>
-      <label class="opt"><span>카드 메뉴의 "보관"을 새로고침 없이 처리<span class="desc">보관 해제는 Udemy 기본 동작을 그대로 씁니다</span></span><input type="checkbox" data-k="library.archiveNoReload"></label>
-      <label class="opt"><span>강의 목록 데이터 자동 갱신 주기</span><select data-k="library.autoRefreshHours"><option value="6">6시간</option><option value="12">12시간</option><option value="24">24시간</option><option value="72">3일</option><option value="168">7일</option></select></label>
-      <label class="opt"><span>검색 결과에 "보유 중" 표시<span class="desc">중복 구매 방지</span></span><input type="checkbox" data-k="catalog.ownedBadges"></label>
-      <label class="opt"><span>검색 결과에서 보유 강의 숨기기</span><input type="checkbox" data-k="catalog.hideOwned"></label>
-      <label class="opt"><span>강의 소개 페이지 정보 상자 (보유 여부, 최초 출시일, 자막 언어)</span><input type="checkbox" data-k="catalog.landingInfo"></label>
+      <h2>My Learning &amp; search pages</h2>
+      <label class="opt"><span>"My Course Tools" button on My Learning</span><input type="checkbox" data-k="library.panel"></label>
+      <label class="opt"><span>Rating, duration and update badges on course cards</span><input type="checkbox" data-k="library.cardBadges"></label>
+      <label class="opt"><span>Archive from the card menu without reloading<span class="desc">Unarchiving uses Udemy's default behavior</span></span><input type="checkbox" data-k="library.archiveNoReload"></label>
+      <label class="opt"><span>Auto-refresh course data every</span><select data-k="library.autoRefreshHours"><option value="6">6 hours</option><option value="12">12 hours</option><option value="24">24 hours</option><option value="72">3 days</option><option value="168">7 days</option></select></label>
+      <label class="opt"><span>Show "Owned" on search results<span class="desc">Helps avoid buying a course twice</span></span><input type="checkbox" data-k="catalog.ownedBadges"></label>
+      <label class="opt"><span>Hide owned courses in search results</span><input type="checkbox" data-k="catalog.hideOwned"></label>
+      <label class="opt"><span>Info box on course landing pages (ownership, first published date, caption languages)</span><input type="checkbox" data-k="catalog.landingInfo"></label>
       <p class="muted" id="lib-cache"></p>
     </section>
 
     <section class="card" id="stats">
-      <h2>학습 기록</h2>
-      <label class="opt"><span>영상 시청 시간 기록 (탭이 보일 때 또는 PiP 중, 재생 중인 시간만)</span><input type="checkbox" data-k="stats.enabled"></label>
-      <label class="opt"><span>하루 목표 (분)</span><input type="number" min="0" max="600" step="5" data-k="stats.dailyGoalMin"></label>
+      <h2>Study stats</h2>
+      <label class="opt"><span>Track watch time (only while playing, with the tab visible or in PiP)</span><input type="checkbox" data-k="stats.enabled"></label>
+      <label class="opt"><span>Daily goal (minutes)</span><input type="number" min="0" max="600" step="5" data-k="stats.dailyGoalMin"></label>
       <div class="kpis" id="kpis"></div>
       <div class="bars" id="bars"></div><div class="bars-labels" id="bars-labels"></div>
-      <h3 style="font-size:14px">최근 7일 코스별</h3>
-      <table><thead><tr><th>코스</th><th class="n">시간</th></tr></thead><tbody id="stat-courses"></tbody></table>
-      <div class="row" style="margin-top:10px"><button id="stats-csv">CSV 내보내기</button><span class="grow"></span><button class="danger" id="stats-clear">기록 초기화</button></div>
+      <h3 style="font-size:14px">Last 7 days by course</h3>
+      <table><thead><tr><th>Course</th><th class="n">Time</th></tr></thead><tbody id="stat-courses"></tbody></table>
+      <div class="row" style="margin-top:10px"><button id="stats-csv">Export CSV</button><span class="grow"></span><button class="danger" id="stats-clear">Clear stats</button></div>
     </section>
 
     <section class="card" id="sent">
-      <h2>문장 수집함</h2>
-      <p class="muted">영상에서 K를 누르면 현재 자막 문장(원문 + 보조)이 저장됩니다. Anki 가져오기용 TSV(앞면 탭 뒷면 탭 출처)로 내보낼 수 있습니다.</p>
-      <div class="row"><input type="text" id="sent-q" placeholder="검색" style="flex:1"><button id="sent-anki" class="primary">Anki TSV</button><button id="sent-csv">CSV</button><button class="danger" id="sent-del">선택 삭제</button></div>
-      <div class="list-scroll" style="margin-top:8px"><table><thead><tr><th><input type="checkbox" id="sent-all"></th><th>문장</th><th>출처</th></tr></thead><tbody id="sent-body"></tbody></table></div>
+      <h2>Saved sentences</h2>
+      <p class="muted">Press K in a video to save the current subtitle sentence (primary + secondary). Export as a TSV for Anki import (front, tab, back, tab, source).</p>
+      <div class="row"><input type="text" id="sent-q" placeholder="Search" style="flex:1"><button id="sent-anki" class="primary">Anki TSV</button><button id="sent-csv">CSV</button><button class="danger" id="sent-del">Delete selected</button></div>
+      <div class="list-scroll" style="margin-top:8px"><table><thead><tr><th><input type="checkbox" id="sent-all"></th><th>Sentence</th><th>Source</th></tr></thead><tbody id="sent-body"></tbody></table></div>
       <p class="muted" id="sent-count"></p>
     </section>
 
     <section class="card" id="notes">
-      <h2>메모</h2>
-      <p class="muted">영상에서 Alt+N으로 남긴 타임스탬프 메모입니다. 이 브라우저에만 저장됩니다.</p>
-      <table><thead><tr><th>코스</th><th class="n">메모 수</th><th></th></tr></thead><tbody id="notes-body"></tbody></table>
-      <div class="row" style="margin-top:10px"><button id="notes-all" class="primary">전체 Markdown 내보내기</button></div>
+      <h2>Notes</h2>
+      <p class="muted">Timestamped notes you made with Alt+N in a video. Stored only in this browser.</p>
+      <table><thead><tr><th>Course</th><th class="n">Notes</th><th></th></tr></thead><tbody id="notes-body"></tbody></table>
+      <div class="row" style="margin-top:10px"><button id="notes-all" class="primary">Export all as Markdown</button></div>
     </section>
 
     <section class="card" id="data">
-      <h2>백업 · 초기화</h2>
-      <p class="muted">백업 파일에는 설정, 메모, 문장 수집함, 태그·학습 큐·메모, 필터 프리셋, 학습 기록, 코스별 속도가 들어갑니다. 강의 목록 캐시는 다시 받을 수 있어 제외합니다.</p>
-      <div class="row"><button id="backup" class="primary">백업 내보내기 (JSON)</button><button id="restore">백업 가져오기</button><input type="file" id="restore-file" accept="application/json" hidden></div>
-      <div class="row" style="margin-top:10px"><button id="clear-cache">강의 목록·커리큘럼 캐시 삭제</button><button class="danger" id="reset-settings">설정 기본값으로</button></div>
+      <h2>Backup &amp; reset</h2>
+      <p class="muted">A backup contains settings, notes, saved sentences, tags / queue / course notes, filter presets, study stats and per-course speeds. The course-list cache is excluded because it can be downloaded again.</p>
+      <div class="row"><button id="backup" class="primary">Export backup (JSON)</button><button id="restore">Import backup</button><input type="file" id="restore-file" accept="application/json" hidden></div>
+      <div class="row" style="margin-top:10px"><button id="clear-cache">Clear course-list &amp; curriculum cache</button><button class="danger" id="reset-settings">Reset settings</button></div>
     </section>
   </main>
 </div>
-<div class="saved" id="saved" role="status">저장됨</div>
+<div class="saved" id="saved" role="status">Saved</div>
 <script src="../lib/common.js"></script>
 <script src="options.js"></script>
 </body>

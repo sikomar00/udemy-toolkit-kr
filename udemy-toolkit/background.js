@@ -1,4 +1,4 @@
-/* Udemy Toolkit KR — 서비스 워커: 교차 출처 자막 요청, 기계번역(옵트인), 화면 캡처, 단축키 명령 */
+/* Toolkit for Udemy — 서비스 워커: 교차 출처 자막 요청, 기계번역(옵트인), 화면 캡처, 단축키 명령 */
 const TRANSLATE_ORIGIN = 'https://translate.googleapis.com/*';
 
 chrome.runtime.onInstalled.addListener((d) => {
@@ -20,8 +20,8 @@ chrome.runtime.onInstalled.addListener(pruneCaches);
 const ALLOWED_HOSTS = [/(^|\.)udemy\.com$/, /(^|\.)udemycdn\.com$/, /^udemy-captions\.s3\.amazonaws\.com$/];
 async function fetchText(url) {
   const u = new URL(url);
-  if (u.protocol !== 'https:') throw new Error('https만 허용');
-  if (!ALLOWED_HOSTS.some((re) => re.test(u.hostname))) throw new Error('허용되지 않은 호스트: ' + u.hostname);
+  if (u.protocol !== 'https:') throw new Error('Only https is allowed');
+  if (!ALLOWED_HOSTS.some((re) => re.test(u.hostname))) throw new Error('Host not allowed: ' + u.hostname);
   const r = await fetch(url, { credentials: 'omit' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.text();
@@ -35,7 +35,7 @@ async function gtx(text, tl) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: 'q=' + encodeURIComponent(text),
   });
-  if (!r.ok) throw new Error('번역 HTTP ' + r.status);
+  if (!r.ok) throw new Error('Translate HTTP ' + r.status);
   const j = await r.json();
   return (j && j[0] ? j[0].map((seg) => (seg && seg[0]) || '').join('') : '');
 }
@@ -84,11 +84,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'translate') {
     (async () => {
       const has = await chrome.permissions.contains({ origins: [TRANSLATE_ORIGIN] });
-      if (!has) throw new Error('옵션 페이지에서 기계번역 권한을 허용하세요');
+      if (!has) throw new Error('Allow the machine-translation permission on the options page');
       const texts = Array.isArray(msg.texts) ? msg.texts.slice(0, 5000) : [];
       const out = await translateAll(texts, String(msg.tl || 'ko'));
       // 번역된 문장이 하나도 없으면 성공으로 응답하지 않는다 (빈 번역이 캐시되어 보조 자막이 영영 비는 것을 막음)
-      if (texts.some((t) => String(t || '').trim()) && out.every((t) => !t)) throw new Error('번역 요청이 모두 실패했습니다 (구글 번역이 막혔거나 제한되었을 수 있습니다)');
+      if (texts.some((t) => String(t || '').trim()) && out.every((t) => !t)) throw new Error('All translation requests failed (Google Translate may be blocked or rate-limited)');
       return out;
     })().then((texts) => sendResponse({ ok: true, texts })).catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
@@ -99,7 +99,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === 'capture') {
     // 같은 창에 다른 사이트가 보이는 상태에서 그 화면을 잘라 저장하는 일이 없도록, 요청한 Udemy 탭이 활성 탭일 때만 캡처
-    if (!sender.tab || !sender.tab.active) { sendResponse({ ok: false, error: 'Udemy 탭이 화면에 보일 때만 캡처할 수 있습니다' }); return; }
+    if (!sender.tab || !sender.tab.active) { sendResponse({ ok: false, error: 'Capture works only while the Udemy tab is visible' }); return; }
     chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: 'png' })
       .then((dataUrl) => sendResponse({ ok: true, dataUrl }))
       .catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));

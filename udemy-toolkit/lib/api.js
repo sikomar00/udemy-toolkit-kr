@@ -137,7 +137,7 @@
   async function listCourses({ archived, fields, onPage, signal }) {
     const first = await request('GET', listUrl(fields, { archived, page: 1 }), null, { signal });
     // 로그인 안내 같은 HTML이 200으로 오면 목록이 비어 보여 기존 캐시를 덮어쓰게 되므로 형식을 확인
-    if (!first || !Array.isArray(first.results)) throw new Error('강의 목록 응답 형식이 예상과 다릅니다 (로그인 상태를 확인하세요)');
+    if (!first || !Array.isArray(first.results)) throw new Error('Unexpected course-list response (check that you are signed in)');
     const total = first.count || (first.results || []).length;
     let results = (first.results || []).slice();
     onPage && onPage(results.length, total);
@@ -155,7 +155,7 @@
     let unique = dedupe(results);
     if (unique.length < total) {
       // 병렬 수집 중 순서가 바뀌어 누락이 생기면 next 링크를 따라 순차 재수집
-      UXK.log('병렬 수집 누락 → 순차 재수집', unique.length, total);
+      UXK.log('parallel fetch missed items; refetching sequentially', unique.length, total);
       const seq = [];
       let next = listUrl(fields, { archived, page: 1 });
       let guard = 0;
@@ -310,7 +310,7 @@
           const { active, archived, fields } = await UXK.api.fetchLibrary(onProgress);
           const data = active.map((c) => normalize(c, false)).concat(archived.map((c) => normalize(c, true)));
           const prev = await this.load();
-          if (!data.length && prev && prev.data.length) throw new Error('빈 목록을 받아 기존 데이터를 유지했습니다');
+          if (!data.length && prev && prev.data.length) throw new Error('Received an empty list; kept the existing data');
           const cache = { t: Date.now(), fields, data };
           await this.save(cache);
           await UXK.local.remove('uxk_refresh_fail:' + location.host);

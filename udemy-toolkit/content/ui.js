@@ -26,7 +26,7 @@
       const node = el('div', { class: 'uxk-toast ' + (kind ? 'uxk-toast-' + kind : '') });
       const text = el('span', { class: 'uxk-toast-text' });
       const acts = el('span', { class: 'uxk-toast-acts' });
-      const x = el('button', { class: 'uxk-toast-x', title: '닫기', text: '×' });
+      const x = el('button', { class: 'uxk-toast-x', title: 'Close', text: '×' });
       node.append(text, acts, x);
       box.appendChild(node);
       t = { node, text, acts, timer: null, close() { clearTimeout(this.timer); node.remove(); if (id) toasts.delete(id); } };
@@ -61,7 +61,7 @@
     modalStack.forEach((m) => { const host = layer(); if (m.back.parentNode !== host) host.appendChild(m.back); });
   });
 
-  function modal({ title, body, buttons = [{ label: '확인', value: true, primary: true }], width = 460, onOpen, closeValue = null, dismissOnBackdrop = true }) {
+  function modal({ title, body, buttons = [{ label: 'OK', value: true, primary: true }], width = 460, onOpen, closeValue = null, dismissOnBackdrop = true }) {
     return new Promise((resolve) => {
       const prevFocus = document.activeElement;
       const back = el('div', { class: 'uxk-modal-back' });
@@ -102,7 +102,7 @@
     });
   }
 
-  function prompt(title, { value = '', placeholder = '', multiline = false, hint = '', okLabel = '저장' } = {}) {
+  function prompt(title, { value = '', placeholder = '', multiline = false, hint = '', okLabel = 'Save' } = {}) {
     const wrap = el('div');
     if (hint) wrap.appendChild(el('div', { class: 'uxk-hint', text: hint }));
     const input = multiline
@@ -114,7 +114,7 @@
       title,
       body: wrap,
       buttons: [
-        { label: '취소', value: null },
+        { label: 'Cancel', value: null },
         { label: okLabel, value: () => input.value, primary: true },
       ],
       dismissOnBackdrop: false, // 입력 중인 내용이 바깥 클릭 한 번에 사라지지 않게 (Esc·취소는 그대로)
@@ -126,10 +126,10 @@
     });
   }
 
-  function confirm(title, message, { okLabel = '진행', danger = false } = {}) {
+  function confirm(title, message, { okLabel = 'Continue', danger = false } = {}) {
     const body = el('div', { class: 'uxk-pre' });
     body.textContent = message;
-    return modal({ title, body, buttons: [{ label: '취소', value: false }, { label: okLabel, value: true, primary: !danger, danger }], closeValue: false });
+    return modal({ title, body, buttons: [{ label: 'Cancel', value: false }, { label: okLabel, value: true, primary: !danger, danger }], closeValue: false });
   }
 
   // ---------- 드로어 ----------
@@ -140,7 +140,7 @@
     const head = el('div', { class: 'uxk-drawer-head' });
     const h = el('strong', { text: title });
     const tools = el('div', { class: 'uxk-drawer-tools' });
-    const x = el('button', { class: 'uxk-btn uxk-btn-ghost', text: '닫기' });
+    const x = el('button', { class: 'uxk-btn uxk-btn-ghost', text: 'Close' });
     head.append(h, tools, x);
     const body = el('div', { class: 'uxk-drawer-body' });
     root.append(head, body);

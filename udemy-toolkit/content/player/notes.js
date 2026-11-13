@@ -21,34 +21,34 @@
     }, {});
   }
   async function quickNote() {
-    if (!P.ctx.courseId) throw new Error('강의 정보를 찾지 못했습니다');
+    if (!P.ctx.courseId) throw new Error('Course info not found');
     const v = P.ctx.video;
     const t = v ? v.currentTime : 0;
     const courseId = P.ctx.courseId, lectureId = P.ctx.lectureId, title = P.lectureTitle(); // 입력하는 동안 강의가 바뀌어도 메모는 시작한 강의에 저장
     const wasPlaying = v && !v.paused;
     if (wasPlaying && P.S.player.notePause) v.pause();
-    const text = await UXK.ui.prompt(`메모 · ${title} · ${UXK.fmtClock(t)}`, { multiline: true, placeholder: '내용 입력 · Ctrl+Enter 저장', hint: 'Udemy에 저장되지 않고 이 브라우저에만 저장됩니다. 노트 목록에서 Markdown으로 내보낼 수 있습니다.' });
+    const text = await UXK.ui.prompt(`Note · ${title} · ${UXK.fmtClock(t)}`, { multiline: true, placeholder: 'Type a note · Ctrl+Enter to save', hint: 'Not saved to Udemy; stored only in this browser. You can export notes as Markdown from the notes list.' });
     if (text && text.trim()) {
       const note = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), lectureId, lectureTitle: title, t: Math.floor(t), text: text.trim(), created: new Date().toISOString() };
       try {
         await addNote(note, courseId);
-        UXK.ui.toast('메모 저장됨', { actions: [{ label: '노트 보기', onClick: openNotes }] });
+        UXK.ui.toast('Note saved', { actions: [{ label: 'View notes', onClick: openNotes }] });
         if (notesDrawer && notesDrawer.isOpen()) renderNotes();
       } catch (err) {
         // 저장 실패 시 입력 내용을 잃지 않도록 클립보드에 보존
         await UXK.copyText(text);
-        UXK.ui.toast(`${err.message} 입력한 메모는 클립보드에 복사했습니다.`, { kind: 'err', timeout: 12000 });
+        UXK.ui.toast(`${err.message} Your note was copied to the clipboard.`, { kind: 'err', timeout: 12000 });
       }
     }
     if (wasPlaying && P.S.player.notePause && v) v.play().catch(() => {});
   }
   let notesDrawer = null;
   async function openNotes() {
-    notesDrawer = UXK.ui.drawer('notes', { title: '내 메모 (이 코스)', width: 440 });
+    notesDrawer = UXK.ui.drawer('notes', { title: 'My notes (this course)', width: 440 });
     if (!notesDrawer.tools.childElementCount) {
       notesDrawer.tools.append(
-        el('button', { class: 'uxk-btn', text: 'Markdown 복사', onclick: async () => UXK.ui.toast((await UXK.copyText(await notesMarkdown())) ? '복사됨' : '복사 실패') }),
-        el('button', { class: 'uxk-btn', text: '.md 저장', onclick: async () => UXK.download(`${UXK.safeFile(P.courseTitle())}_notes.md`, await notesMarkdown(), 'text/markdown;charset=utf-8') }),
+        el('button', { class: 'uxk-btn', text: 'Copy Markdown', onclick: async () => UXK.ui.toast((await UXK.copyText(await notesMarkdown())) ? 'Copied' : 'Copy failed') }),
+        el('button', { class: 'uxk-btn', text: 'Save .md', onclick: async () => UXK.download(`${UXK.safeFile(P.courseTitle())}_notes.md`, await notesMarkdown(), 'text/markdown;charset=utf-8') }),
       );
       notesDrawer.body.addEventListener('click', onNotesClick);
     }
@@ -64,12 +64,12 @@
   async function renderNotes() {
     if (!notesDrawer) return;
     const list = await sortedNotes();
-    if (!list.length) { notesDrawer.body.innerHTML = `<div class="uxk-hint">아직 메모가 없습니다. 영상에서 ${esc(P.S.hotkeys.note)}를 누르면 현재 시각과 함께 메모합니다.</div>`; return; }
+    if (!list.length) { notesDrawer.body.innerHTML = `<div class="uxk-hint">No notes yet. Press ${esc(P.S.hotkeys.note)} in a video to add a note at the current time.</div>`; return; }
     let last = null;
     notesDrawer.body.innerHTML = list.map((n) => {
       const head = n.lectureId !== last ? `<div class="uxk-note-lec">${esc(n.lectureTitle)}</div>` : '';
       last = n.lectureId;
-      return `${head}<div class="uxk-note" data-id="${esc(n.id)}"><button class="uxk-note-t" data-go="${Number(n.lectureId) || 0}:${Number(n.t) || 0}">${UXK.fmtClock(Number(n.t) || 0)}</button><div class="uxk-note-x">${esc(n.text).replace(/\n/g, '<br>')}</div><button class="uxk-icon" data-del="${esc(n.id)}" title="삭제">×</button></div>`;
+      return `${head}<div class="uxk-note" data-id="${esc(n.id)}"><button class="uxk-note-t" data-go="${Number(n.lectureId) || 0}:${Number(n.t) || 0}">${UXK.fmtClock(Number(n.t) || 0)}</button><div class="uxk-note-x">${esc(n.text).replace(/\n/g, '<br>')}</div><button class="uxk-icon" data-del="${esc(n.id)}" title="Delete">×</button></div>`;
     }).join('');
   }
   async function onNotesClick(e) {
@@ -89,7 +89,7 @@
   }
   async function notesMarkdown() {
     const list = await sortedNotes();
-    const out = [`# ${P.courseTitle()} — 메모`, ''];
+    const out = [`# ${P.courseTitle()} — Notes`, ''];
     let last = null;
     list.forEach((n) => {
       if (n.lectureId !== last) { out.push('', `## ${n.lectureTitle}`, ''); last = n.lectureId; }
@@ -103,7 +103,7 @@
     const t = parseFloat(p.get('uxk_t'));
     if (!Number.isFinite(t) || !P.ctx.video) return;
     const v = P.ctx.video;
-    const go = () => { v.currentTime = t; P.indicator(`${UXK.fmtClock(t)}로 이동`); };
+    const go = () => { v.currentTime = t; P.indicator(`Jump to ${UXK.fmtClock(t)}`); };
     if (v.readyState >= 1) go(); else v.addEventListener('loadedmetadata', go, { once: true });
     p.delete('uxk_t');
     const qs = p.toString();

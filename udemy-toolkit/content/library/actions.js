@@ -37,24 +37,24 @@
     const a = act.getAttribute('data-act');
     switch (a) {
       case 'close': P.closePanel(); break;
-      case 'refresh': if (P.state.busy) { P.setStatus('일괄 처리 중에는 새로고침할 수 없습니다'); break; } try { await P.ensureData(true); P.fillOptions(); P.render(); P.refreshBadges(); } catch (err) { P.setStatus('불러오기 실패: ' + err.message + ' (로그인 상태 확인)'); } break;
+      case 'refresh': if (P.state.busy) { P.setStatus('Cannot refresh during a bulk action'); break; } try { await P.ensureData(true); P.fillOptions(); P.render(); P.refreshBadges(); } catch (err) { P.setStatus('Load failed: ' + err.message + ' (check that you are signed in)'); } break;
       case 'apply': P.applyForm(); break;
       case 'reset': P.writeForm(P.DEFAULT_FILTERS()); P.applyForm(); break;
       case 'more': P.state.shown += P.SHOW_STEP; P.render(); break;
       case 'preset-save': {
-        const name = await UXK.ui.prompt('필터 프리셋 이름', { placeholder: '예: 미시작 고평점 최신' });
+        const name = await UXK.ui.prompt('Filter preset name', { placeholder: 'e.g. Not started, top rated, newest' });
         if (name && name.trim()) {
           P.presets[name.trim()] = P.readForm();
           const saved = await UXK.local.set(UXK.KEYS.presets, P.presets);
           P.fillOptions();
-          UXK.ui.toast(saved ? `프리셋 "${name.trim()}" 저장됨` : '프리셋을 저장하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도하세요.', { kind: saved ? '' : 'err', timeout: saved ? 3500 : 7000 });
+          UXK.ui.toast(saved ? `Preset "${name.trim()}" saved` : 'Could not save the preset. Reload the page and try again.', { kind: saved ? '' : 'err', timeout: saved ? 3500 : 7000 });
         }
         break;
       }
       case 'preset-del': {
         const ps = $('select[data-preset]', P.panel);
         const name = ps.value;
-        if (!name) { UXK.ui.toast('삭제할 프리셋을 먼저 선택하세요'); break; }
+        if (!name) { UXK.ui.toast('Select a preset to delete first'); break; }
         delete P.presets[name];
         await UXK.local.set(UXK.KEYS.presets, P.presets);
         P.fillOptions();
@@ -63,7 +63,7 @@
       case 'archive': bulkArchive(true); break;
       case 'unarchive': bulkArchive(false); break;
       case 'tag-add': case 'tag-del': {
-        const t = await UXK.ui.prompt(a === 'tag-add' ? '추가할 태그' : '제거할 태그', { placeholder: '쉼표로 여러 개 (예: 데이터, 스페인어)' });
+        const t = await UXK.ui.prompt(a === 'tag-add' ? 'Tags to add' : 'Tags to remove', { placeholder: 'Comma-separated (e.g. data, spanish)' });
         if (!t) break;
         const list = t.split(',').map((s) => s.trim()).filter(Boolean);
         P.meta = await UXK.lib.updateMeta([...P.state.selected], (m) => ({
@@ -99,19 +99,19 @@
     const c = P.byId.get(id);
     const m = P.meta[id] || { tags: [], memo: '' };
     const wrap = el('div');
-    const tagIn = el('input', { class: 'uxk-input', type: 'text', placeholder: '쉼표로 구분 (예: 데이터, 실무)' });
+    const tagIn = el('input', { class: 'uxk-input', type: 'text', placeholder: 'Comma-separated (e.g. data, work)' });
     tagIn.value = (m.tags || []).join(', ');
-    const memoIn = el('textarea', { class: 'uxk-input', rows: 4, placeholder: '왜 이 강의를 들을지, 들을 부분 등' });
+    const memoIn = el('textarea', { class: 'uxk-input', rows: 4, placeholder: 'Why you take this course, which parts, etc.' });
     memoIn.value = m.memo || '';
-    wrap.append(el('div', { class: 'uxk-hint', text: c ? c.title : '' }), P.control('태그', tagIn), P.control('메모', memoIn));
-    const ok = await UXK.ui.modal({ title: '태그 · 메모', body: wrap, buttons: [{ label: '취소', value: false }, { label: '저장', value: true, primary: true }], closeValue: false });
+    wrap.append(el('div', { class: 'uxk-hint', text: c ? c.title : '' }), P.control('Tags', tagIn), P.control('Notes', memoIn));
+    const ok = await UXK.ui.modal({ title: 'Tags & notes', body: wrap, buttons: [{ label: 'Cancel', value: false }, { label: 'Save', value: true, primary: true }], closeValue: false });
     if (!ok) return;
     const tags = tagIn.value.split(',').map((s) => s.trim()).filter(Boolean);
     try {
       P.meta = await UXK.lib.updateMeta([id], (x) => ({ ...x, tags: Array.from(new Set(tags)), memo: memoIn.value.trim() }));
     } catch (err) {
       await UXK.copyText(memoIn.value);
-      UXK.ui.toast(`${err.message} (입력한 메모는 클립보드에 복사했습니다)`, { kind: 'err', timeout: 9000 });
+      UXK.ui.toast(`${err.message} (your note was copied to the clipboard)`, { kind: 'err', timeout: 9000 });
       return;
     }
     P.fillOptions(); P.render(); P.refreshBadges();
@@ -122,17 +122,17 @@
     const ids = [...P.state.selected].filter((id) => { const c = P.byId.get(id); return c && c.archived !== toArchive; });
     if (!ids.length) return;
     const sample = ids.slice(0, 5).map((id) => '- ' + P.byId.get(id).title).join('\n');
-    const verb = toArchive ? '보관' : '보관 해제';
+    const verb = toArchive ? 'Archive' : 'Unarchive';
     const extra = toArchive
-      ? `보관됨 탭이나 Udemy의 보관됨 필터에서 되돌릴 수 있습니다. 약 ${Math.max(1, Math.round((ids.length * 0.6) / 60))}분 걸리며 도중에 중지할 수 있습니다.`
-      : '보관 해제는 Udemy에서 아직 확인하지 못한 요청 방식을 씁니다. 첫 요청이 실패하면 바로 멈추고, 그때는 Udemy 화면에서 직접 해제해야 합니다.';
-    const ok = await UXK.ui.confirm(`${ids.length}개 강의 ${verb}`, `${sample}${ids.length > 5 ? `\n... 외 ${ids.length - 5}개` : ''}\n\n${extra}`, { okLabel: verb, danger: toArchive });
+      ? `You can undo this from the Archived tab or Udemy\'s Archived filter. It takes about ${Math.max(1, Math.round((ids.length * 0.6) / 60))} min and can be stopped midway.`
+      : 'Unarchiving uses a request format not yet verified against Udemy. If the first request fails it stops immediately; then unarchive manually on Udemy.';
+    const ok = await UXK.ui.confirm(`${verb} ${ids.length} courses`, `${sample}${ids.length > 5 ? `\n... and ${ids.length - 5} more` : ''}\n\n${extra}`, { okLabel: verb, danger: toArchive });
     if (!ok) return;
     P.state.busy = true; P.updateBulk();
     let done = 0; const failed = [];
     let stopped = false;
-    const stopAct = [{ label: '중지', close: false, onClick: () => { stopped = true; } }];
-    const progress = UXK.ui.toast(`${verb} 중... 0 / ${ids.length}`, { id: 'uxk-bulk', timeout: 0, actions: stopAct });
+    const stopAct = [{ label: 'Stop', close: false, onClick: () => { stopped = true; } }];
+    const progress = UXK.ui.toast(`${verb}... 0 / ${ids.length}`, { id: 'uxk-bulk', timeout: 0, actions: stopAct });
     for (const id of ids) {
       if (stopped) break;
       try {
@@ -147,19 +147,19 @@
         if (done === 0) {
           progress.close();
           P.state.busy = false; P.updateBulk();
-          P.setStatus(`첫 요청이 실패해 중단했습니다: ${err.message}${err.status === 403 ? ' (보안 토큰/로그인 확인)' : err.status === 404 || err.status === 405 ? ' (요청 방식이 Udemy와 다름)' : ''}`);
+          P.setStatus(`Stopped because the first request failed: ${err.message}${err.status === 403 ? ' (check security token / sign-in)' : err.status === 404 || err.status === 405 ? ' (request format differs from Udemy)' : ''}`);
           return;
         }
         if (failed.length >= 5) break;
       }
-      progress.update(`${verb} 중... ${done + failed.length} / ${ids.length}`, { timeout: 0, actions: stopAct });
+      progress.update(`${verb}... ${done + failed.length} / ${ids.length}`, { timeout: 0, actions: stopAct });
       await UXK.sleep(400);
     }
     progress.close();
     P.state.busy = false;
     if (P.cache) await UXK.lib.save(P.cache);
     P.render();
-    UXK.ui.toast(`${stopped ? '중지됨 · ' : ''}${verb} 완료 ${done}개${failed.length ? `, 실패 ${failed.length}개 (선택 유지)` : ''} · 새로고침 없이 처리됨`, { timeout: 6000 });
+    UXK.ui.toast(`${stopped ? 'Stopped · ' : ''}${verb} done: ${done}${failed.length ? `, ${failed.length} failed (selection kept)` : ''} · no reload needed`, { timeout: 6000 });
   }
 
   // ---------------- 내보내기 ----------------
@@ -168,7 +168,7 @@
   function exportCsv() {
     const rows = exportRows();
     const q = UXK.csvCell;
-    const head = ['제목', '링크', '강사', '카테고리', '언어', '자막', '별점', '신뢰별점', '리뷰수', '최근업데이트', '시간(h)', '수강생수', '진행률(%)', '구매일', '최근접속', '즐겨찾기', '보관', '태그', '학습큐', '메모'];
+    const head = ['Title', 'Link', 'Instructor', 'Category', 'Language', 'Captions', 'Rating', 'Bayesian rating', 'Reviews', 'Last updated', 'Hours', 'Students', 'Progress (%)', 'Purchased', 'Last accessed', 'Favorite', 'Archived', 'Tags', 'Queue', 'Notes'];
     const lines = [head.map(q).join(',')];
     rows.forEach((c) => {
       const m = P.meta[c.id] || {};
@@ -177,13 +177,13 @@
         c.enrolled || '', c.accessed || '', c.favorite ? 'Y' : '', c.archived ? 'Y' : '', q((m.tags || []).join(', ')), m.queue ? 'Y' : '', q(m.memo || '')].join(','));
     });
     UXK.download(`udemy-courses-${UXK.today()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
-    UXK.ui.toast(`CSV ${UXK.fmtNum(rows.length)}행 저장 (Notion: 가져오기 → CSV)`);
+    UXK.ui.toast(`CSV saved: ${UXK.fmtNum(rows.length)} rows (Notion: Import → CSV)`);
   }
   function exportMd() {
     const rows = exportRows();
-    const md = [`# Udemy 학습 목록 (${UXK.today()})`, '', ...rows.map((c) => `- [ ] [${c.title.replace(/[[\]]/g, '')}](${linkOf(c)}) — ★${c.rating ? c.rating.toFixed(1) : '-'} · ${c.hours ? c.hours.toFixed(1) + 'h' : '-'} · 진행 ${c.progress}%${(P.meta[c.id] && P.meta[c.id].tags && P.meta[c.id].tags.length) ? ' · #' + P.meta[c.id].tags.join(' #') : ''}`)].join('\n');
+    const md = [`# Udemy learning list (${UXK.today()})`, '', ...rows.map((c) => `- [ ] [${c.title.replace(/[[\]]/g, '')}](${linkOf(c)}) — ★${c.rating ? c.rating.toFixed(1) : '-'} · ${c.hours ? c.hours.toFixed(1) + 'h' : '-'} · ${c.progress}% done${(P.meta[c.id] && P.meta[c.id].tags && P.meta[c.id].tags.length) ? ' · #' + P.meta[c.id].tags.join(' #') : ''}`)].join('\n');
     UXK.download(`udemy-checklist-${UXK.today()}.md`, md, 'text/markdown;charset=utf-8');
-    UXK.ui.toast(`Markdown ${UXK.fmtNum(rows.length)}줄 저장 (Notion에 붙여넣으면 할 일 목록)`);
+    UXK.ui.toast(`Markdown saved: ${UXK.fmtNum(rows.length)} lines (paste into Notion for a to-do list)`);
   }
   function exportJson() {
     const rows = exportRows().map((c) => ({ ...c, link: linkOf(c), meta: P.meta[c.id] || null }));

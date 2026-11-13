@@ -18,14 +18,14 @@
   const dayKey = (o) => { const d = new Date(); d.setDate(d.getDate() - o); return UXK.today(d); };
   const secOf = (k) => (st.days && st.days[k] ? st.days[k].sec : 0);
   const today = secOf(dayKey(0));
-  $('#today-txt').textContent = `${Math.round(today / 60)}분${goal ? ` / 목표 ${S.stats.dailyGoalMin}분` : ''}`;
+  $('#today-txt').textContent = `${Math.round(today / 60)} min${goal ? ` / goal ${S.stats.dailyGoalMin} min` : ''}`;
   $('#today-bar').style.width = `${goal ? Math.min(100, (today / goal) * 100) : today ? 100 : 0}%`;
   const meets = (k) => (goal ? secOf(k) >= goal : secOf(k) >= 60);
   let streak = 0, i = meets(dayKey(0)) ? 0 : 1;
   while (i < 3650 && meets(dayKey(i))) { streak++; i++; } // 잘못된 목표값이 와도 끝나도록 10년 상한
   let week = 0;
   for (let k = 0; k < 7; k++) week += secOf(dayKey(k));
-  $('#streak').textContent = `연속 ${streak}일 · 최근 7일 ${UXK.fmtDur(week)}`;
+  $('#streak').textContent = `${streak}-day streak · last 7 days ${UXK.fmtDur(week)}`;
 
   // 현재 탭이 Udemy 강의라면 제어
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -40,7 +40,7 @@
     $('#tab-lecture').textContent = r.lecture ? `${r.course} · ${r.lecture}` : r.course || '';
     $('#tab-speed').textContent = `${Number(r.speed).toFixed(2)}x`;
     const rem = r.remaining;
-    $('#tab-remain').textContent = rem ? `남은 ${UXK.fmtDur(rem.remain)}${rem.exact ? ` · 완료 ${rem.nDone}/${rem.n}강` : ' (추정)'}` : '';
+    $('#tab-remain').textContent = rem ? `${UXK.fmtDur(rem.remain)} left${rem.exact ? ` · ${rem.nDone}/${rem.n} done` : ' (est.)'}` : '';
   }
   if (isLearn) {
     await refreshTab(null);
@@ -52,28 +52,28 @@
   let diagFull = '';
   $('#diag').onclick = async () => {
     $('#diag-box').hidden = false;
-    $('#diag-copy').textContent = '결과 복사';
+    $('#diag-copy').textContent = 'Copy Result';
     let r = null;
     if (isUdemy) { try { r = await chrome.tabs.sendMessage(tab.id, { type: 'diagnose' }); } catch (e) {} }
     $('#diag-copy').hidden = !(r && r.ok);
     if (!r || !r.ok) {
-      $('#diag-out').textContent = isUdemy ? '이 탭에서는 점검할 수 없습니다. 강의·내 학습·검색 화면(www.udemy.com)인지 확인하고, 확장을 업데이트한 직후라면 탭을 새로고침한 뒤 다시 눌러 주세요.' : 'Udemy 탭을 연 상태에서 팝업을 열고 눌러 주세요.';
+      $('#diag-out').textContent = isUdemy ? 'Cannot check this tab. Make sure it is a Udemy lecture, My Learning or search page (www.udemy.com); if you just updated the extension, reload the tab and try again.' : 'Open a Udemy tab, then open this popup and press the button.';
       $('#diag-hint').textContent = '';
       return;
     }
     const line = (c) => {
       if (c.count) return `✓ ${c.name} (${c.count})`;
-      return c.optional ? `– ${c.name} (0) · 해당 화면이 아니면 없는 게 정상` : `✗ ${c.name} (0)\n    영향: ${c.impact}`;
+      return c.optional ? `– ${c.name} (0) · normal if this is not the matching page` : `✗ ${c.name} (0)\n    Impact: ${c.impact}`;
     };
-    const head = `Udemy Toolkit v${chrome.runtime.getManifest().version} · 화면 종류: ${r.route}${r.route === 'player' ? ` · 도구 줄: ${r.dock || '없음'}` : ''}`;
-    const body = r.checks.map(line).join('\n') || '이 화면은 점검 항목이 없습니다.';
+    const head = `Toolkit for Udemy v${chrome.runtime.getManifest().version} · page type: ${r.route}${r.route === 'player' ? ` · dual subs: ${{ box: 'in caption band', overlay: 'over video' }[r.capMode] || 'off'}${r.nativeCc ? ` · hidden element: ${r.nativeCc}` : ''}` : ''}`;
+    const body = r.checks.map(line).join('\n') || 'No checks for this page.';
     $('#diag-out').textContent = `${head}\n${body}`;
     $('#diag-hint').textContent = r.checks.some((c) => !c.count && !c.optional)
-      ? '✗가 있으면 "결과 복사"를 눌러 붙여 넣어 주세요. 고칠 단서가 함께 복사됩니다.'
-      : '꼭 있어야 하는 항목은 모두 찾았습니다. – 항목은 목차·메뉴·검색 목록을 연 상태에서 다시 점검하세요.';
-    diagFull = [`${head}\n${body}`, '선택자:', ...r.checks.map((c) => `${c.name}: ${c.sel}`), '', `data-purpose 목록: ${r.purposes.join(', ')}`, '', `class 접두어 목록: ${r.classes.join(', ')}`].join('\n');
+      ? 'If anything shows ✗, press "Copy Result" and paste it to the developer. It includes clues for a fix.'
+      : 'All required items were found. Re-check the – items with the curriculum, a menu or search results open.';
+    diagFull = [`${head}\n${body}`, 'Selectors:', ...r.checks.map((c) => `${c.name}: ${c.sel}`), '', `data-purpose list: ${r.purposes.join(', ')}`, '', `class prefix list: ${r.classes.join(', ')}`, '', 'Structure around the video:', ...r.layout].join('\n');
   };
-  $('#diag-copy').onclick = async () => { $('#diag-copy').textContent = (await UXK.copyText(diagFull)) ? '복사됨' : '복사 실패'; };
+  $('#diag-copy').onclick = async () => { $('#diag-copy').textContent = (await UXK.copyText(diagFull)) ? 'Copied' : 'Copy failed'; };
 
   const openUdemy = (path) => chrome.tabs.create({ url: 'https://www.udemy.com' + path });
   $('#open-lib').onclick = () => openUdemy('/home/my-courses/learning/');

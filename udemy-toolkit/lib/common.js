@@ -1,4 +1,4 @@
-/* Udemy Toolkit KR — 공통 유틸 (content script / extension page 공용) */
+/* Toolkit for Udemy — 공통 유틸 (content script / extension page 공용) */
 (() => {
   const UXK = (globalThis.UXK = globalThis.UXK || {});
   if (UXK.__common) return;
@@ -31,8 +31,6 @@
       subs: 'V',
       replayCue: 'Q',
       loopCue: 'L',
-      abLoop: 'A',
-      shadow: 'W',
       saveSentence: 'K',
       copyCue: 'Y',
       note: 'Alt+N',
@@ -50,10 +48,8 @@
       showPrimary: true,
       showSecondary: true,
       hideNative: true,
-      shadowPause: false, // 문장 끝마다 일시정지(따라 말하기)
     },
     player: {
-      dock: true, // 영상 아래 도구 줄·자막 영역 (전체화면에서는 영상 위 도구 막대·자막을 쓴다)
       toolbar: true,
       remaining: true,
       sectionToggles: true,
@@ -81,11 +77,11 @@
   };
 
   UXK.ACTION_LABELS = {
-    speedUp: '속도 +', speedDown: '속도 −', speedReset: '1배속 ↔ 이전 속도', back: '뒤로 이동 (초는 재생 설정)', forward: '앞으로 이동',
-    next: '다음 강의', prev: '이전 강의', pip: 'PiP (화면 속 화면)', theater: '넓게 보기', subs: '이중 자막 켜기/끄기',
-    replayCue: '현재 문장 다시 듣기', loopCue: '현재 문장 반복', abLoop: 'A-B 구간 반복 (3번째 누르면 해제)',
-    shadow: '따라 말하기 (문장마다 멈춤)', saveSentence: '문장 수집함에 저장', copyCue: '현재 문장 복사',
-    note: '타임스탬프 메모', screenshot: '화면 캡처', help: '단축키 도움말',
+    speedUp: 'Speed +', speedDown: 'Speed −', speedReset: 'Reset speed (1x ↔ previous)', back: 'Seek back (seconds set in Playback)', forward: 'Seek forward',
+    next: 'Next lecture', prev: 'Previous lecture', pip: 'PiP (picture-in-picture)', theater: 'Wide view', subs: 'Dual subtitles on/off',
+    replayCue: 'Replay current sentence', loopCue: 'Loop current sentence',
+    saveSentence: 'Save sentence to collection', copyCue: 'Copy current sentence',
+    note: 'Timestamped note', screenshot: 'Capture screenshot', help: 'Shortcut help',
   };
   // Udemy 플레이어 기본 단축키 (충돌 경고용)
   UXK.UDEMY_RESERVED = ['Left', 'Right', 'Up', 'Down', 'Shift+Left', 'Shift+Right', 'F', 'M', 'B', 'Shift+Slash'];
@@ -132,7 +128,7 @@
   // 확장이 업데이트·재로드되면 열려 있던 탭의 콘텐츠 스크립트는 고아가 되어 저장소를 쓸 수 없다
   UXK.alive = () => { try { return !!(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id); } catch (e) { return false; } };
   class DeadError extends Error {
-    constructor() { super('확장 프로그램이 업데이트되었습니다. 이 페이지를 새로고침한 뒤 다시 시도하세요.'); this.dead = true; }
+    constructor() { super('The extension was updated. Reload this page and try again.'); this.dead = true; }
   }
   UXK.DeadError = DeadError;
 
@@ -210,7 +206,7 @@
         if (!hasChrome() || !UXK.alive()) return false;
         await chrome.storage.local.set({ [key]: val });
         return true;
-      } catch (e) { console.warn('[UXK] 저장 실패', key, e); return false; }
+      } catch (e) { console.warn('[UXK] save failed', key, e); return false; }
     },
     async remove(key) {
       try { if (hasChrome() && UXK.alive()) await chrome.storage.local.remove(key); } catch (e) {}
@@ -291,16 +287,16 @@
   UXK.fmtDur = function (sec) {
     sec = Math.max(0, Math.round(sec || 0));
     const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
-    if (h && m === 60) return `${h + 1}시간`;
-    if (h) return m ? `${h}시간 ${m}분` : `${h}시간`;
-    return `${m}분`;
+    if (h && m === 60) return `${h + 1}h`;
+    if (h) return m ? `${h}h ${m}m` : `${h}h`;
+    return `${m}m`;
   };
-  UXK.fmtNum = (n) => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
+  UXK.fmtNum = (n) => (n == null ? '-' : Number(n).toLocaleString('en-US'));
   UXK.fmtCompact = function (n) {
     if (n == null) return '-';
-    if (n >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, '') + '억';
-    if (n >= 1e4) return (n / 1e4).toFixed(1).replace(/\.0$/, '') + '만';
-    return Number(n).toLocaleString('ko-KR');
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return Number(n).toLocaleString('en-US');
   };
   UXK.today = function (d = new Date()) {
     const p = (x) => String(x).padStart(2, '0');

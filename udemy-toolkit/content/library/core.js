@@ -47,7 +47,7 @@
     P.loadingProgress = { n: 0, t: 0 };
     updateFab();
     try {
-      const c = await UXK.lib.refresh((n, t) => { P.loadingProgress = { n, t }; updateFab(); P.setStatus(`불러오는 중... ${UXK.fmtNum(n)} / ${UXK.fmtNum(t)}`); });
+      const c = await UXK.lib.refresh((n, t) => { P.loadingProgress = { n, t }; updateFab(); P.setStatus(`Loading... ${UXK.fmtNum(n)} / ${UXK.fmtNum(t)}`); });
       setCache(c);
       return c;
     } finally {
@@ -60,9 +60,9 @@
     if (!P.fab) return;
     if (P.loadingProgress) {
       const pct = P.loadingProgress.t ? Math.round((P.loadingProgress.n / P.loadingProgress.t) * 100) : 0;
-      P.fab.textContent = `강의 데이터 불러오는 중 ${pct}%`;
+      P.fab.textContent = `Loading course data ${pct}%`;
     } else {
-      P.fab.textContent = '내 강의 도구';
+      P.fab.textContent = 'My Course Tools';
     }
   }
 
