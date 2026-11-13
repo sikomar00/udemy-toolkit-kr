@@ -90,7 +90,7 @@
   P.speedLabel = null;
   function buildLayer() {
     if (P.layer) return;
-    indicatorEl = el('div', { class: 'uxk-indicator' });
+    indicatorEl = el('div', { class: 'uxk-indicator', role: 'status' }); // 단축키로 켜고 끈 결과(속도, Dual subtitles ON 등)를 스크린리더가 읽는다
     P.sub1 = el('div', { class: 'uxk-sub1' });
     P.sub2 = el('div', { class: 'uxk-sub2' });
     P.subsBox = el('div', { class: 'uxk-subs', title: 'Drag to move' }, [P.sub1, P.sub2]);
@@ -102,7 +102,7 @@
       return n;
     };
     const tip = (text, action) => (P.S.hotkeys[action] ? `${text} (${P.S.hotkeys[action]})` : text);
-    const sep = () => el('span', { class: 'uxk-tb-sep' });
+    const sep = () => el('span', { class: 'uxk-tb-sep', 'aria-hidden': 'true' });
     toolbar = el('div', { class: 'uxk-toolbar', role: 'toolbar', 'aria-label': 'Toolkit for Udemy tools' }, [
       b('−', tip('Slower', 'speedDown'), () => P.run('speedDown')),
       P.speedLabel,

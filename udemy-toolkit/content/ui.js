@@ -23,10 +23,10 @@
     const box = ensureToastBox();
     let t = id && toasts.get(id);
     if (!t) {
-      const node = el('div', { class: 'uxk-toast ' + (kind ? 'uxk-toast-' + kind : '') });
+      const node = el('div', { class: 'uxk-toast ' + (kind ? 'uxk-toast-' + kind : ''), role: kind === 'err' ? 'alert' : 'status' }); // 오류는 바로 읽어 주고 나머지는 하던 말이 끝난 뒤 읽는다
       const text = el('span', { class: 'uxk-toast-text' });
       const acts = el('span', { class: 'uxk-toast-acts' });
-      const x = el('button', { class: 'uxk-toast-x', title: 'Close', text: '×' });
+      const x = el('button', { class: 'uxk-toast-x', title: 'Close', 'aria-label': 'Close', text: '×' });
       node.append(text, acts, x);
       box.appendChild(node);
       t = { node, text, acts, timer: null, close() { clearTimeout(this.timer); node.remove(); if (id) toasts.delete(id); } };
@@ -49,6 +49,7 @@
   // ---------- 모달 ----------
   // 여러 모달이 겹치면 Escape는 맨 위 모달만 닫는다
   const modalStack = [];
+  let modalSeq = 0;
   document.addEventListener('keydown', (e) => {
     const top = modalStack[modalStack.length - 1];
     if (!top) return;
@@ -57,6 +58,18 @@
     if (!top.box.contains(e.target)) e.stopPropagation();
   }, true);
   const isModalOpen = () => modalStack.length > 0;
+
+  // Tab·Shift+Tab이 대화상자 밖(뒤의 Udemy 화면)으로 나가지 않고 안에서 돌게 한다
+  function trapTab(container, e) {
+    if (e.key !== 'Tab') return;
+    const items = [...container.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
+      .filter((n) => !n.disabled && n.tabIndex >= 0 && n.getClientRects().length > 0 && !n.closest('[hidden]'));
+    if (!items.length) { e.preventDefault(); return; }
+    const first = items[0], last = items[items.length - 1], cur = document.activeElement;
+    if (!container.contains(cur)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && cur === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus(); }
+  }
   document.addEventListener('fullscreenchange', () => {
     modalStack.forEach((m) => { const host = layer(); if (m.back.parentNode !== host) host.appendChild(m.back); });
   });
@@ -65,8 +78,9 @@
     return new Promise((resolve) => {
       const prevFocus = document.activeElement;
       const back = el('div', { class: 'uxk-modal-back' });
-      const box = el('div', { class: 'uxk-modal', role: 'dialog', 'aria-modal': 'true', style: { width: `min(${width}px, calc(100vw - 32px))` } });
-      const head = el('div', { class: 'uxk-modal-head' }, [el('strong', { text: title || '' })]);
+      const titleId = 'uxk-modal-title-' + (++modalSeq);
+      const box = el('div', { class: 'uxk-modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId, style: { width: `min(${width}px, calc(100vw - 32px))` } });
+      const head = el('div', { class: 'uxk-modal-head' }, [el('strong', { id: titleId, text: title || '' })]);
       const content = el('div', { class: 'uxk-modal-body' });
       if (body instanceof Node) content.appendChild(body); else if (body != null) content.innerHTML = body;
       const foot = el('div', { class: 'uxk-modal-foot' });
@@ -89,7 +103,7 @@
         foot.appendChild(btn);
       });
       // 모달 안에서 입력한 키가 Udemy 단축키(Space 재생 등)로 전달되지 않게 버블 단계에서 차단
-      box.addEventListener('keydown', (e) => e.stopPropagation());
+      box.addEventListener('keydown', (e) => { trapTab(box, e); e.stopPropagation(); });
       box.addEventListener('keyup', (e) => e.stopPropagation());
       box.addEventListener('keypress', (e) => e.stopPropagation());
       back.addEventListener('mousedown', (e) => { if (dismissOnBackdrop && e.target === back) finish(closeValue); });
@@ -136,7 +150,7 @@
   const drawers = new Map();
   function drawer(id, { title = '', width = 420 } = {}) {
     if (drawers.has(id)) return drawers.get(id);
-    const root = el('div', { class: 'uxk-drawer', id: 'uxk-drawer-' + id, style: { width: `min(${width}px, 100vw)` } });
+    const root = el('div', { class: 'uxk-drawer', id: 'uxk-drawer-' + id, role: 'complementary', 'aria-label': title, style: { width: `min(${width}px, 100vw)` } });
     const head = el('div', { class: 'uxk-drawer-head' });
     const h = el('strong', { text: title });
     const tools = el('div', { class: 'uxk-drawer-tools' });
@@ -146,13 +160,14 @@
     root.append(head, body);
     const d = {
       root, body, tools,
-      setTitle(t) { h.textContent = t; },
+      setTitle(t) { h.textContent = t; root.setAttribute('aria-label', t); },
       open() { const host = layer(); if (root.parentNode !== host) host.appendChild(root); root.classList.add('uxk-open'); },
       close() { root.classList.remove('uxk-open'); },
       toggle() { root.classList.contains('uxk-open') && root.isConnected ? d.close() : d.open(); },
       isOpen() { return root.isConnected && root.classList.contains('uxk-open'); },
     };
     x.onclick = d.close;
+    root.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); d.close(); } }); // 키보드로 서랍 안에 있을 때 Esc로 닫는다
     drawers.set(id, d);
     return d;
   }
@@ -160,5 +175,5 @@
     drawers.forEach((d) => { if (d.isOpen()) { const host = layer(); if (d.root.parentNode !== host) host.appendChild(d.root); } });
   });
 
-  UXK.ui = { toast, modal, prompt, confirm, drawer, layer, isModalOpen };
+  UXK.ui = { toast, modal, prompt, confirm, drawer, layer, isModalOpen, trapTab };
 })();

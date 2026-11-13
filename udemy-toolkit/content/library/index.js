@@ -7,18 +7,29 @@
   const { el } = UXK;
 
   // ---------------- 열기/닫기 ----------------
+  let opener = null; // 패널을 열기 직전에 초점이 있던 곳 (닫으면 돌려준다)
   async function openPanel() {
     if (!P.panel) P.buildPanel();
+    opener = document.activeElement;
     P.panel.classList.add('uxk-open');
     P.fillOptions();
     P.writeForm(P.state.filters);
     P.state.filters = P.readForm(); // 저장돼 있던 카테고리·태그가 지금 목록에 없으면 빈 값으로 정리 (보이지 않는 조건으로 목록이 걸러지는 일 방지)
     P.render();
+    const title = P.panel.querySelector('#uxk-lib-title');
+    if (title) title.focus(); // 키보드·스크린리더 사용자가 패널 안에서 시작하도록 제목으로 초점을 옮긴다
     if (!P.cache || UXK.lib.isStale(P.cache, P.S.library.autoRefreshHours)) {
       try { await P.ensureData(!P.cache ? false : true); P.fillOptions(); P.render(); P.processCards(); } catch (err) { P.setStatus('Load failed: ' + err.message + ' (check that you are signed in)'); }
     }
   }
-  function closePanel() { if (P.panel) P.panel.classList.remove('uxk-open'); }
+  function closePanel() {
+    if (!P.panel) return;
+    const wasOpen = P.panel.classList.contains('uxk-open');
+    P.panel.classList.remove('uxk-open');
+    const back = opener && opener.isConnected ? opener : P.fab;
+    if (wasOpen && back && back.focus) back.focus();
+    opener = null;
+  }
 
   // ---------------- 생명주기 ----------------
   let started = false;
