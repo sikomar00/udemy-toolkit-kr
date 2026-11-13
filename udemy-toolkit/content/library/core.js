@@ -13,6 +13,7 @@
   P.presets = {};
   P.mean = 4.4;
   P.fab = null;
+  P.selBanner = null; // 보이는 줄을 모두 골랐을 때 전체 선택을 안내하는 줄 (panel.js)
   P.panel = null;
   P.observer = null;
   P.loadingProgress = null;
@@ -32,6 +33,21 @@
     sort: 'bayes', dir: 'desc',
   });
   state.filters = DEFAULT_FILTERS();
+
+  // ---------------- 마지막 보기(탭·필터·정렬) 기억 ----------------
+  // 저장된 값은 믿지 않고 종류가 맞는 것만 받는다 (선택한 강의와 보여 주는 개수는 기억하지 않는다)
+  function restoreView(v) {
+    if (!v || typeof v !== 'object') return;
+    if (['active', 'archived', 'all'].includes(v.scope)) state.scope = v.scope;
+    if (v.filters && typeof v.filters === 'object') {
+      const f = DEFAULT_FILTERS();
+      Object.keys(f).forEach((k) => { if (typeof v.filters[k] === typeof f[k]) f[k] = v.filters[k]; });
+      if (f.dir !== 'asc') f.dir = 'desc';
+      state.filters = f;
+      state.sort = { key: f.sort, dir: f.dir };
+    }
+  }
+  const saveViewSoon = UXK.throttle(() => { UXK.local.set(UXK.KEYS.libraryView, { scope: state.scope, filters: state.filters }); }, 600);
 
   // ---------------- 데이터 ----------------
   function setCache(c) {
@@ -134,5 +150,5 @@
   }
   const currentRows = () => applySort(applyFilters(scoped()));
 
-  Object.assign(P, { SHOW_STEP, state, DEFAULT_FILTERS, setCache, allData, ensureData, currentRows });
+  Object.assign(P, { SHOW_STEP, state, DEFAULT_FILTERS, setCache, allData, ensureData, currentRows, restoreView, saveViewSoon });
 })();

@@ -77,6 +77,7 @@
         P.render(); P.refreshBadges();
         break;
       case 'sel-clear': P.state.selected.clear(); P.render(); break;
+      case 'sel-all-matches': P.currentRows().forEach((c) => P.state.selected.add(c.id)); P.updateBulk(); break;
       case 'csv': exportCsv(); break;
       case 'md': exportMd(); break;
       case 'json': exportJson(); break;
@@ -86,7 +87,8 @@
   function onListChange(e) {
     const t = e.target;
     if (t.classList.contains('uxk-all')) {
-      P.currentRows().forEach((c) => (t.checked ? P.state.selected.add(c.id) : P.state.selected.delete(c.id)));
+      // 보이는 줄만 고른다. 조건에 맞는 전체를 고르려면 나타나는 "Select all N matching courses"를 누른다
+      P.currentRows().slice(0, P.state.shown).forEach((c) => (t.checked ? P.state.selected.add(c.id) : P.state.selected.delete(c.id)));
       P.render();
     } else if (t.classList.contains('uxk-sel')) {
       const id = +t.closest('tr').getAttribute('data-id');
@@ -110,7 +112,7 @@
     range.forEach((rid) => (t.checked ? P.state.selected.add(rid) : P.state.selected.delete(rid)));
     $$('tbody tr[data-id]', P.panel).forEach((tr) => { if (range.has(+tr.getAttribute('data-id'))) tr.querySelector('.uxk-sel').checked = t.checked; });
     const all = $('.uxk-all', P.panel);
-    if (all) all.checked = ids.length > 0 && ids.every((rid) => P.state.selected.has(rid));
+    if (all) { const shownIds = ids.slice(0, P.state.shown); all.checked = shownIds.length > 0 && shownIds.every((rid) => P.state.selected.has(rid)); }
     P.updateBulk();
   }
   // Shift+클릭이 글자 범위 선택(파란 칠)으로 번지지 않게 막는다
@@ -151,8 +153,14 @@
       : 'Unarchiving uses a request format not yet verified against Udemy. If the first request fails it stops immediately; then unarchive manually on Udemy.';
     const ok = await UXK.ui.confirm(`${verb} ${ids.length} courses`, `${sample}${ids.length > 5 ? `\n... and ${ids.length - 5} more` : ''}\n\n${extra}`, { okLabel: verb, danger: toArchive });
     if (!ok) return;
+    await runBulk(ids, toArchive, false);
+  }
+
+  // 보관/보관 해제를 한 강의씩 요청한다. 끝나면 되돌리기(Undo) 단추가 있는 알림을 띄우고, 되돌리기는 이 함수를 반대 방향으로 다시 부른다
+  async function runBulk(ids, toArchive, isUndo) {
+    const verb = toArchive ? 'Archive' : 'Unarchive';
     P.state.busy = true; P.updateBulk();
-    let done = 0; const failed = [];
+    let done = 0; const failed = []; const doneIds = [];
     let stopped = false;
     const stopAct = [{ label: 'Stop', close: false, onClick: () => { stopped = true; } }];
     const progress = UXK.ui.toast(`${verb}... 0 / ${ids.length}`, { id: 'uxk-bulk', timeout: 0, actions: stopAct });
@@ -160,7 +168,7 @@
       if (stopped) break;
       try {
         if (toArchive) await UXK.api.archive(id); else await UXK.api.unarchive(id);
-        done++;
+        done++; doneIds.push(id);
         P.state.selected.delete(id);
         const c = P.byId.get(id);
         if (c) c.archived = toArchive;
@@ -182,11 +190,18 @@
     P.state.busy = false;
     if (P.cache) await UXK.lib.save(P.cache);
     P.render();
-    UXK.ui.toast(`${stopped ? 'Stopped · ' : ''}${verb} done: ${done}${failed.length ? `, ${failed.length} failed (selection kept)` : ''} · no reload needed`, { timeout: 6000 });
+    const undo = !isUndo && doneIds.length ? [{ label: `Undo (${doneIds.length})`, onClick: () => { runBulk(doneIds, !toArchive, true).catch((err) => UXK.ui.toast(err && err.message ? err.message : String(err), { kind: 'err', timeout: 7000 })); } }] : [];
+    UXK.ui.toast(`${isUndo ? 'Undo: ' : ''}${stopped ? 'Stopped · ' : ''}${verb} done: ${done}${failed.length ? `, ${failed.length} failed (selection kept)` : ''} · no reload needed`, { timeout: undo.length ? 15000 : 6000, actions: undo });
   }
 
   // ---------------- 내보내기 ----------------
-  function exportRows() { return P.currentRows(); }
+  // 고른 강의가 있으면 그것만(현재 필터에 보이는 것 중), 없으면 필터·정렬 결과 전체를 내보낸다. 단추 글자(panel.js updateBulk)가 어느 쪽인지 보여 준다
+  function exportRows() {
+    const rows = P.currentRows();
+    const picked = rows.filter((c) => P.state.selected.has(c.id));
+    return picked.length ? picked : rows; // 고른 강의가 모두 지금 필터 밖이면 전체를 내보낸다 (단추 글자도 그때는 원래 글자)
+  }
+  const exportCount = () => { const n = exportRows().filter((c) => P.state.selected.has(c.id)).length; return n; };
   const linkOf = (c) => `${location.origin}/course-dashboard-redirect/?course_id=${c.id}`;
   function exportCsv() {
     const rows = exportRows();
@@ -213,5 +228,5 @@
     UXK.download(`udemy-courses-${UXK.today()}.json`, JSON.stringify(rows, null, 2), 'application/json');
   }
 
-  Object.assign(P, { onPanelClick, onListChange, onListClick, onListMouseDown });
+  Object.assign(P, { onPanelClick, onListChange, onListClick, onListMouseDown, exportCount });
 })();
