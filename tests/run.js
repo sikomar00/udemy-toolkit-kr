@@ -6,20 +6,28 @@ const os = require('os');
 const { createMock } = require('./mock');
 
 const EXT = path.resolve(__dirname, '../udemy-toolkit');
+// 브라우저 표시 언어: 기본은 영어(en-US). 한국어 화면을 시험하려면 UXK_TEST_LANG=ko 로 실행한다
+const TEST_LANG = process.env.UXK_TEST_LANG || 'en-US';
 const results = [];
 const check = (name, ok, detail = '') => { results.push({ name, ok: !!ok, detail }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  — ' + detail : ''}`); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function launch(mockOpts = {}) {
+async function launch(mockOpts = {}, lang = TEST_LANG) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxk-'));
   const context = await chromium.launchPersistentContext(dir, {
     channel: 'chromium',
     headless: true,
     viewport: { width: 1400, height: 900 },
     acceptDownloads: true,
+    locale: lang,
     env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' },
-    args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--autoplay-policy=no-user-gesture-required'],
+    args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, `--lang=${lang}`, '--autoplay-policy=no-user-gesture-required'],
   });
+  // 번역이 빠진 영어 문장 수집: UXK_I18N_MISSING=<파일 경로> 로 실행하면 [UXK i18n missing] 기록을 그 파일에 모은다
+  if (process.env.UXK_I18N_MISSING) {
+    context.on('console', (m) => { const t = m.text(); if (t.startsWith('[UXK i18n missing]')) fs.appendFileSync(process.env.UXK_I18N_MISSING, t.slice(19) + '\n'); });
+    await context.addInitScript(() => { try { localStorage.setItem('uxk_i18n_missing', '1'); } catch (e) { /* 저장소를 못 쓰는 화면은 기록하지 않는다 */ } });
+  }
   const mock = createMock(mockOpts);
   await context.route('https://www.udemy.com/**', mock.handle);
   await context.route('https://udemy-captions.s3.amazonaws.com/**', mock.handle);
@@ -747,6 +755,112 @@ async function fallbackTests() {
   }
 }
 
+// 한국어 화면: 브라우저 표시 언어가 한국어(auto)일 때 모든 화면이 한국어로 나오고, 사용자 글(자막·메모·강의 제목)은 그대로이며, 번역이 빠진 영어 문장이 없는지 본다
+async function koreanTests() {
+  const { context, extId } = await launch({}, 'ko');
+  const missing = new Set();
+  context.on('console', (m) => { const t = m.text(); if (t.startsWith('[UXK i18n missing]')) missing.add(t.slice(19)); });
+  await context.addInitScript(() => { try { localStorage.setItem('uxk_i18n_missing', '1'); } catch (e) { /* 저장소를 못 쓰는 화면은 기록하지 않는다 */ } });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'https://www.udemy.com' });
+  const page = await context.newPage();
+  try {
+    // 내 학습 + 패널
+    await page.goto('https://www.udemy.com/home/my-courses/learning/');
+    await page.waitForFunction(() => /내 강의 도구/.test((document.getElementById('uxk-fab') || {}).textContent || ''), null, { timeout: 30000 });
+    check('한국어: 내 학습 단추 "내 강의 도구"', true);
+    await page.click('#uxk-fab');
+    await page.waitForSelector('.uxk-lib.uxk-open tbody tr', { timeout: 10000 });
+    const panel = await page.$eval('#uxk-lib', (n) => n.innerText);
+    check('한국어: 패널 머리글·정렬·상태 줄', ['제목', '정렬 기준', '데이터 새로고침', '조건 일치'].every((s) => panel.includes(s)), panel.replace(/\s+/g, ' ').slice(0, 160));
+    const stats = await page.$eval('.uxk-lib-stats', (n) => n.textContent);
+    check('한국어: 요약 통계', /250개/.test(stats) && /미시작/.test(stats), stats.slice(0, 100));
+    const labels = await page.evaluate(() => { const p = document.getElementById('uxk-lib'); return [p.querySelector('tbody .uxk-sel').getAttribute('aria-label'), p.querySelector('.uxk-all').getAttribute('aria-label'), p.querySelector('table').getAttribute('aria-label')]; });
+    check('한국어: 체크박스·표 이름(aria-label)', /선택$/.test(labels[0]) && labels[1] === '보이는 강의 모두 선택' && labels[2] === '내 강의', labels.join(' | '));
+    await page.locator('.uxk-lib tbody tr .uxk-sel').nth(2).check();
+    check('한국어: 선택 개수·일괄 보관 단추', /선택 1개/.test(await page.$eval('#uxk-lib', (n) => n.innerText)) && /보관 \(1\)/.test(await page.$eval('[data-act="archive"]', (n) => n.textContent)));
+    await page.click('[data-act="archive"]');
+    await page.waitForSelector('.uxk-modal');
+    const modalText = await page.$eval('.uxk-modal', (n) => n.innerText);
+    check('한국어: 일괄 보관 확인 창', modalText.includes('강의 1개 보관') && modalText.includes('되돌릴 수 있습니다') && modalText.includes('취소'), modalText.replace(/\s+/g, ' ').slice(0, 120));
+    await page.click('.uxk-modal .uxk-btn-danger');
+    await waitToast(page, /보관 완료 1개 · 새로고침 없이 처리됨/, 10000);
+    check('한국어: 일괄 보관 결과 알림', true, await toastText(page));
+    const titles = await page.$$eval('.uxk-lib tbody tr', (rows) => rows.slice(0, 3).map((r) => r.innerText.replace(/\s+/g, ' ')));
+    check('한국어: 강의 제목은 원문 그대로', titles.every((t) => /Course|Python/.test(t)), titles[0]);
+
+    // 강의 화면: 도구 막대·남은 시간·자막·알림
+    await page.goto('https://www.udemy.com/course/test-course/learn/lecture/1001');
+    await page.waitForSelector('.uxk-toolbar', { timeout: 15000 });
+    const bar = await page.$$eval('.uxk-toolbar button', (n) => n.map((b) => b.textContent.trim()));
+    check('한국어: 도구 막대 단추', ['이중 자막', '문장 반복', '대본 복사', '메모', '캡처', '넓게 보기', '자막 설정'].every((s) => bar.includes(s)), bar.join('|'));
+    const tips = await page.$$eval('.uxk-toolbar button', (n) => n.map((b) => b.title));
+    check('한국어: 단추 설명에 단축키가 붙음 (예: 속도 낮추기 (S))', tips.includes('속도 낮추기 (S)') && tips.some((t) => /^이중 자막 켜기\/끄기 \(V\)$/.test(t)), tips.slice(0, 4).join(' | '));
+    await page.waitForSelector('.uxk-pill', { timeout: 8000 });
+    const pill = await page.$eval('.uxk-pill', (n) => n.textContent);
+    check('한국어: 남은 시간 (25분, 완료 1/3강)', /남은 25분/.test(pill) && /완료 1\/3강/.test(pill), pill);
+    await page.waitForFunction(() => document.querySelector('video') && document.querySelector('video').readyState >= 2, null, { timeout: 10000 });
+    await page.mouse.click(1200, 800);
+    await page.keyboard.press('v');
+    await page.waitForFunction(() => /이중 자막 켜짐/.test((document.querySelector('.uxk-indicator') || {}).textContent || ''), null, { timeout: 5000 });
+    check('한국어: 이중 자막 켜짐 표시', true);
+    await page.evaluate(() => { const v = document.querySelector('video'); v.pause(); v.currentTime = 1; });
+    await page.waitForFunction(() => (document.querySelector('.uxk-sub1') || {}).textContent === 'Hello world', null, { timeout: 10000 });
+    check('한국어: 자막 내용은 원문 그대로 (Hello world)', true);
+    await page.keyboard.press('k');
+    await page.waitForFunction(() => /문장 저장됨 \(총 1\)/.test(document.querySelector('.uxk-indicator').textContent), null, { timeout: 5000 });
+    check('한국어: 문장 저장 알림', true);
+    await page.keyboard.press('h');
+    await page.waitForSelector('.uxk-modal', { timeout: 5000 });
+    const help = await page.$eval('.uxk-modal', (n) => n.innerText);
+    check('한국어: 단축키 도움말 창', help.includes('단축키') && help.includes('속도 +') && help.includes('Udemy 기본 단축키'), help.replace(/\s+/g, ' ').slice(0, 100));
+    await page.keyboard.press('Escape');
+
+    // 검색·강의 소개
+    await page.goto('https://www.udemy.com/courses/search/?q=python');
+    await page.waitForSelector('#card-owned .uxk-owned', { timeout: 8000 });
+    const own = await page.$eval('#card-owned .uxk-owned', (n) => n.textContent);
+    const arc = await page.$eval('#card-archived .uxk-owned', (n) => n.textContent);
+    check('한국어: 검색 결과 "보유 중" 배지 (보관됨 포함)', /^보유 중 · 진행 \d+%/.test(own) && arc.includes('보관됨'), `${own} / ${arc}`);
+    await page.goto('https://www.udemy.com/course/slug-101/');
+    await page.waitForFunction(() => /최초 출시 2019-02-19/.test((document.querySelector('.uxk-info') || {}).textContent || ''), null, { timeout: 8000 });
+    const info = await page.$eval('.uxk-info', (n) => n.textContent);
+    check('한국어: 강의 소개 정보 상자', info.includes('이미 보유한 강의') && info.includes('Korean [Auto]'), info.slice(0, 120));
+
+    // 설정 페이지
+    const opt = await context.newPage();
+    await opt.goto(`chrome-extension://${extId}/pages/options.html`);
+    await opt.waitForSelector('#hk-body tr');
+    const o = await opt.evaluate(() => ({ lang: document.documentElement.lang, title: document.title, nav: document.querySelector('nav').innerText, first: document.querySelector('#hk-body tr td').textContent, kpi: document.getElementById('kpis').innerText, sent: document.getElementById('sent-body').innerText, notes: document.getElementById('notes-body').innerText, stat: document.getElementById('stat-courses').innerText, hkLabel: document.querySelector('[data-hk]').getAttribute('aria-label') }));
+    check('한국어: 설정 페이지 언어 표시와 제목', o.lang === 'ko' && o.title.includes('설정'), `${o.lang} ${o.title}`);
+    check('한국어: 설정 메뉴·단축키 표·학습 기록', o.nav.includes('일반') && o.nav.includes('재생') && o.first === '속도 +' && o.kpi.includes('오늘') && o.kpi.includes('최근 7일') && o.hkLabel === '속도 + 단축키', `${o.first} | ${o.hkLabel}`);
+    check('한국어: 저장한 문장 원문은 번역하지 않음', o.sent.includes('Hello world'), o.sent.replace(/\s+/g, ' ').slice(0, 80));
+    check('한국어: 사용자 글 영역의 빈 상태 문구도 번역 (메모 없음·기록 없음)', o.notes.includes('메모 없음') && o.stat.includes('기록 없음'), `${o.notes.trim()} | ${o.stat.trim()}`);
+    const sel = await opt.$eval('[data-k="ui.lang"]', (n) => [...n.options].map((x) => `${x.value}:${x.textContent}`).join(','));
+    check('한국어: 언어 선택 상자 (자동·English·한국어)', sel === 'auto:자동 (브라우저 언어),en:English,ko:한국어', sel);
+
+    // 팝업
+    const pop = await context.newPage();
+    await pop.goto(`chrome-extension://${extId}/pages/popup.html`);
+    await pop.waitForSelector('#today-txt');
+    const p = await pop.evaluate(() => ({ lang: document.documentElement.lang, text: document.body.innerText }));
+    check('한국어: 팝업', p.lang === 'ko' && p.text.includes('오늘') && p.text.includes('내 학습 열기') && p.text.includes('화면 구조 점검') && /\d+분/.test(p.text), p.text.replace(/\s+/g, ' ').slice(0, 120));
+    await pop.close();
+
+    // 영어로 바꾸면 설정 페이지와 Udemy 화면이 영어로 돌아옴
+    await opt.selectOption('[data-k="ui.lang"]', 'en');
+    await opt.waitForFunction(() => document.documentElement.lang === 'en' && document.querySelector('#general h2').textContent === 'General', null, { timeout: 8000 });
+    check('한국어→English 전환: 설정 페이지가 영어로 다시 그려짐', true);
+    await page.goto('https://www.udemy.com/course/test-course/learn/lecture/1001');
+    await page.waitForSelector('.uxk-toolbar', { timeout: 15000 });
+    const barEn = await page.$$eval('.uxk-toolbar button', (n) => n.map((b) => b.textContent.trim()));
+    check('언어를 English로 정하면 브라우저가 한국어여도 도구 막대가 영어', barEn.includes('Dual Subs') && barEn.includes('Copy Transcript'), barEn.join('|'));
+  } finally {
+    const list = [...missing];
+    check('한국어: 번역이 빠진 영어 문장 없음 (콘솔 [UXK i18n missing] 기록)', list.length === 0, list.slice(0, 8).join(' || '));
+    await context.close();
+  }
+}
+
 (async () => {
   const t0 = Date.now();
   const { context, mock, sw, extId } = await launch();
@@ -774,6 +888,7 @@ async function fallbackTests() {
   check('페이지 콘솔 오류 없음', relevantErrors.length === 0, relevantErrors.slice(0, 5).join(' || '));
   await context.close();
   try { await fallbackTests(); } catch (e) { check('[fallback] 예외 없이 완료', false, e.message.split('\n')[0]); }
+  try { await koreanTests(); } catch (e) { check('[한국어] 예외 없이 완료', false, e.message.split('\n')[0]); }
   const fail = results.filter((r) => !r.ok);
   console.log(`\n총 ${results.length}개 중 통과 ${results.length - fail.length}, 실패 ${fail.length} (${Math.round((Date.now() - t0) / 1000)}초)`);
   fs.writeFileSync(path.join(__dirname, 'results.json'), JSON.stringify(results, null, 2));
