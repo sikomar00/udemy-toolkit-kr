@@ -23,7 +23,7 @@ Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 단위 49개 + 통합 95개
+npm test            # 단위 59개 + 통합 105개
 npm run shots       # 화면 캡처 → tests/shots/
 ```
 

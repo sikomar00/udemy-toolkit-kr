@@ -62,7 +62,7 @@
 - 작은 글씨 색 대비(`.uxk-owned`, 평점 색 등)와 모달 포커스 트랩: 디자인 결정 필요.
 
 ## 플레이어 파일 구조 (content/player/)
-원래 한 파일(player.js, 약 1,290줄)이던 것을 기능별 8개로 나눔. 각 파일은 500줄 이하(tests/unit.js가 검사). 로드 순서는 manifest.json이 정한다: core → speed → subs → transcript → lessons → notes → tools → index → (catalog, diagnose, main).
+원래 한 파일(player.js, 약 1,290줄)이던 것을 기능별 파일로 나눔(이후 dock.js 추가). 각 파일은 500줄 이하(tests/unit.js가 검사). 로드 순서는 manifest.json이 정한다: core → speed → subs → transcript → lessons → notes → tools → dock → index → (catalog, diagnose, main).
 
 | 파일 | 내용 |
 |---|---|
@@ -73,6 +73,7 @@
 | lessons.js | 강의 이동, 커리큘럼·남은 시간, 섹션 전체 완료 |
 | notes.js | 타임스탬프 메모, 메모 목록·내보내기, 메모 링크로 이동 |
 | tools.js | PiP·화면 캡처, 더 보기 메뉴·도움말, 학습 시간 기록 |
+| dock.js | 도크: 영상 바로 아래의 상시 도구 줄 + 자막 영역 (아래 "도크" 참고) |
 | index.js | 단축키·`run()` 명령 처리, 영상 연결, `init`/`destroy`/`onSettings`/`onUrl`/`onMessage`, 공개 객체 `UXK.playerPage` |
 
 공유 규칙
@@ -93,3 +94,11 @@
 | index.js | 패널 열기·닫기, `init`/`destroy`/`onSettings`, 공개 객체 `UXK.libraryPage` |
 
 여러 파일이 읽고 쓰는 `let` 변수(`S`, `cache`, `byId`, `meta`, `presets`, `mean`, `fab`, `panel`, `observer`, `loadingProgress`)는 `P.이름`에 둔다. 파일 크기 제한(500줄 이하)과 `P.*` 이름 등록 검사는 tests/unit.js가 두 폴더(player, library)에 똑같이 적용한다.
+
+## 도크 (content/player/dock.js)
+영상 바로 아래에 항상 보이는 도구 줄(한 번 클릭으로 켜고 끄는 버튼, 켜짐은 `aria-pressed`와 색으로 표시)과 자막 영역(원문·번역 2줄, 높이 고정)을 둔다. 설정 `player.dock`(기본 켜짐)로 끌 수 있다.
+- 위치(`data-mode`): ① `below` = 영상 요소에서 위로 올라가며 **아래쪽 끝이 같은 가장 바깥 요소**를 찾아 그 바로 뒤에 끼움 → 어긋나면(영상 옆 칸에 놓이거나 잘려서 가려짐) ② `inside` = 그 요소 안쪽 끝에 붙임 → 그래도 안 되면 ③ `fixed` = 화면 맨 아래 고정(3초마다 다시 시도). 어긋남은 위치(영상 바로 아래, 가로로 겹침)와 `overflow: hidden` 조상에 잘리는지로 판정한다. 실제 Udemy 화면 구조는 확인하지 못해서 이 판정과 대체 순서로 대응한다. 팝업의 "화면 구조 점검"이 현재 `data-mode`를 보여 준다.
+- 도크가 켜져 있으면(전체화면 제외) 영상 위 도구 막대와 영상 위 자막 상자는 숨긴다(`html.uxk-dock-on`). **전체화면에서는 도크를 숨기고** 영상 위 도구 막대·자막을 쓴다(영상 아래 공간이 없으므로). 자막 글자는 영상 위 상자와 도크 양쪽에 항상 같이 쓴다.
+- 도크 안의 동작은 단축키와 같은 `run(action)`을 부르고, 동작이 끝나면 `updateDock()`으로 켜짐 표시를 맞춘다.
+- 주의: 화면 감시(MutationObserver)가 도크 안의 변화까지 잡으므로, 도크 안의 글자는 **바뀔 때만** 쓴다(`put()`). 그렇지 않으면 감시가 끝없이 돈다.
+- 통합 테스트는 기본적으로 도크를 끄고(`player.dock=false`) 영상 위 도구 막대 기준으로 돌고, `dockTests`가 도크를 켜서 위치·클릭·자막 영역·전체화면·대체 위치를 확인한다.
