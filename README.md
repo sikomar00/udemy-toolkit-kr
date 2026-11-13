@@ -1,5 +1,7 @@
 # Toolkit for Udemy
 
+**한국어** · [English](README.en.md)
+
 Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지를 강화하는 개인용 크롬 확장 프로그램(Manifest V3)입니다.
 빌드 과정이 없는 순수 JavaScript 구현입니다.
 
@@ -106,6 +108,7 @@ Udemy 기본 키(Space, ←/→ 5초, Shift+←/→ 속도, ↑/↓, F, M, B, ?)
 
 | 경로 | 내용 |
 |---|---|
+| `README.en.md` | 이 문서의 영어 버전 |
 | `udemy-toolkit/` | 확장 프로그램 본체. 이 폴더를 크롬에 로드합니다 |
 | `udemy-toolkit/README.md` | 기능, 단축키, 설치, 한계 |
 | `udemy-toolkit/DESIGN.md` | 사용한 Udemy 내부 API·DOM의 근거 등급(실측 / 코드 / 추정), 리뷰 반영 내역 |
