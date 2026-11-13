@@ -100,6 +100,15 @@ The **My Course Tools** button at the bottom right opens a panel for working wit
 
 Udemy's own keys (Space, ←/→ 5 s, Shift+←/→ speed, ↑/↓, F, M, B, ?) keep working. Alt+Shift+P (play/pause), Alt+Shift+←/→ and Alt+Shift+S (capture) work even outside the tab and can be changed at `chrome://extensions/shortcuts`.
 
+### Accessibility
+
+The My Course Tools panel, dialogs, notifications, popup and settings can be used with a keyboard and a screen reader.
+
+- The panel and dialogs open as named dialogs, move keyboard focus inside, keep Tab from leaving them, and return focus to where you were when closed with Esc.
+- Checkboxes, queue and edit buttons have names that include the course title; sortable headers work with Enter or Space and announce their sort state.
+- Notifications are read aloud (errors immediately), and the result of a hotkey (speed, Dual subtitles ON…) is announced along with the on-screen label.
+- Text contrast is tested against WCAG AA (4.5:1) on the panel, dialogs, popup and settings in light and dark. Keyboard focus is always visible and the system "reduce motion" setting is respected.
+
 ### What is not included
 
 Video downloading, completing a whole course at once to get a certificate, and coupon crawling are left out because of terms-of-service and DRM concerns.
@@ -127,7 +136,7 @@ To update, overwrite the files in the same folder and click the reload icon on `
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 59 unit tests + 120 integration tests
+npm test            # 59 unit tests + 135 integration tests
 npm run shots       # screenshots of the mock pages → tests/shots/
 ```
 
