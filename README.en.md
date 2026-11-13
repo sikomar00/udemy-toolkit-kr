@@ -28,7 +28,7 @@ These are real Udemy screens with the extension turned on. The header that shows
 
 ## Features
 
-Button names are in English. You can turn every feature on or off in Settings (toolbar icon → Settings).
+The interface is available in **English and Korean**. It follows your browser language by default; change it in Settings (toolbar icon → Settings → General → Language). You can turn every feature on or off in Settings.
 
 ### Lecture player
 
@@ -136,7 +136,7 @@ To update, overwrite the files in the same folder and click the reload icon on `
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 59 unit tests + 135 integration tests
+npm test            # 75 unit tests + 161 integration tests (135 English + 26 Korean)
 npm run shots       # screenshots of the mock pages → tests/shots/
 ```
 
@@ -145,4 +145,4 @@ npm run shots       # screenshots of the mock pages → tests/shots/
 - How data is handled is described in the [privacy policy](docs/privacy-policy.md). The Web Store submission steps (Korean) are in [docs/web-store-tutorial.md](docs/web-store-tutorial.md).
 - The extension uses Udemy's website-internal APIs and page structure, not an official API. If Udemy changes them, some features may stop working. Use **Check Page Structure** in the popup to see which ones.
 - Notes, sentences, tags, study stats and the course list are stored only in this browser. Settings (hotkeys and options) may sync to your other computers through your Chrome account. Only if you turn it on, machine translation sends subtitle sentences to Google Translate.
-- The extension's own screens (toolbar buttons, settings, popup, notifications) are in English. The design documents (`udemy-toolkit/README.md`, `udemy-toolkit/DESIGN.md`) are in Korean. The backup file marker `udemy-toolkit-kr` is kept so that older backups still import.
+- The extension's own screens (toolbar buttons, settings, popup, notifications) are available in English and Korean. After changing the language, reload open Udemy tabs. Your own text (course titles, subtitles, notes) and the "Check Page Structure" report (for developers) are not translated. The design documents (`udemy-toolkit/README.md`, `udemy-toolkit/DESIGN.md`) are in Korean. The backup file marker `udemy-toolkit-kr` is kept so that older backups still import.

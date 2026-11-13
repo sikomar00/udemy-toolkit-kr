@@ -24,6 +24,7 @@ Toolkit for Udemy is an unofficial, independent tool. It is not affiliated with,
 - Badges on course cards and "Owned" labels in search results to avoid buying a course twice.
 
 **Popup, settings and backup**
+- Available in English and Korean. It follows your browser language by default; choose a language in Settings → General.
 - The toolbar popup shows today's study time, the speed and time left of the current lecture, and quick switches (Dual subtitles, Hide owned courses, Toolbar below video, Dark mode).
 - Check Page Structure tells you if a Udemy page change broke a feature, and lets you copy a report.
 - Back up and restore settings, notes, saved sentences, tags, presets and stats as JSON.
