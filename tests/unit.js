@@ -9,7 +9,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
 const ctx = {
   console, setTimeout, clearTimeout, setInterval, URLSearchParams, URL, Promise, Map, Set, Date, Math, JSON,
   location: { href: 'https://www.udemy.com/x', pathname: '/x', origin: 'https://www.udemy.com' },
-  document: { addEventListener() {}, cookie: '', documentElement: { classList: { toggle() {} } }, body: null },
+  document: { addEventListener() {}, cookie: '', documentElement: { classList: { toggle() {}, contains: () => false } }, body: null },
   window: { addEventListener() {} }, navigator: {}, history: {},
 };
 ctx.globalThis = ctx;
@@ -81,8 +81,8 @@ check('설정 방어: 잘못된 자료형은 기본값으로, 맞는 값은 유�
 check('설정 방어: 모르는 키·__proto__는 버림', Object.keys(conformed).join() === Object.keys(U.DEFAULTS).join() && ({}).polluted === undefined);
 check('CSV 셀: 수식 시작 문자는 \'로 막고 따옴표는 이스케이프', U.csvCell('=1+1') === '"\'=1+1"' && U.csvCell('@x') === '"\'@x"' && U.csvCell('-5 tips') === '"\'-5 tips"' && U.csvCell('a"b') === '"a""b"' && U.csvCell(null) === '""' && U.csvCell('Hello') === '"Hello"');
 check('VTT: 공백만 있는 줄로 구분된 큐도 분리', U.vtt.parse('WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nA\n \n00:00:01.000 --> 00:00:02.000\nB\n').length === 2);
-check('시간 표시', U.fmtClock(3723) === '1:02:03' && U.fmtClock(65) === '01:05' && U.fmtDur(1500) === '25분' && U.fmtDur(3600 * 2 + 60 * 5) === '2시간 5분');
-check('숫자 축약', U.fmtCompact(22100) === '2.2만' && U.fmtCompact(999) === '999');
+check('시간 표시', U.fmtClock(3723) === '1:02:03' && U.fmtClock(65) === '01:05' && U.fmtDur(1500) === '25m' && U.fmtDur(3600 * 2 + 60 * 5) === '2h 5m');
+check('숫자 축약', U.fmtCompact(22100) === '22.1K' && U.fmtCompact(1500000) === '1.5M' && U.fmtCompact(999) === '999');
 check('라우팅', U.route('/home/my-courses/learning/') === 'library' && U.route('/course/abc/learn/lecture/12') === 'player' && U.route('/course/abc/') === 'landing' && U.route('/courses/search/') === 'catalog');
 check('파일명 정리', U.safeFile('a/b:c*?"<>|d') === 'a_b_c_d');
 
@@ -96,8 +96,8 @@ const PAGES = ['/course/abc/learn/lecture/1', '/home/my-courses/learning/', '/co
 const dp = diagAt(PAGES[0]);
 check('점검: 플레이어는 영상 2개를 세고 없는 요소는 0', dp.route === 'player' && dp.checks[0].count === 2 && dp.checks.slice(1).every((c) => c.count === 0), JSON.stringify(dp.checks.map((c) => c.count)));
 check('점검: data-purpose 값은 중복 없이 정렬', dp.purposes.join() === 'a,b');
-check('점검: 도구 줄(dock) 위치는 없으면 빈 문자열', dp.dock === '');
-check('도크: 기본값은 켜짐 (영상 아래 도구 줄·자막 영역)', U.DEFAULTS.player.dock === true);
+check('점검: 숨긴 기본 자막(nativeCc)은 없으면 빈 문자열, 영상 안 글자 목록은 배열', dp.capMode === '' && dp.nativeCc === '' && Array.isArray(dp.layout));
+check('삭제한 기능(따라 말하기·A-B 반복·도크)의 설정·단축키가 기본값에 남아 있지 않음', !('shadowPause' in U.DEFAULTS.subs) && !('dock' in U.DEFAULTS.player) && !U.DEFAULTS.hotkeys.shadow && !U.DEFAULTS.hotkeys.abLoop);
 check('점검: class 접두어는 해시 조각을 떼고 중복 없이', dp.classes.join() === 'ud-btn,video-player--container', dp.classes.join());
 check('점검: 목차·메뉴처럼 열어야 보이는 항목은 선택 항목으로 표시', dp.checks.filter((c) => c.optional).length === 2 && diagAt(PAGES[1]).checks.filter((c) => c.optional).length === 1 && diagAt(PAGES[3]).checks.every((c) => c.optional));
 check('점검: 화면 종류별 항목 수', [9, 3, 3, 2].every((n, i) => diagAt(PAGES[i]).checks.length === n));
