@@ -26,6 +26,12 @@ These are real Udemy screens with the extension turned on. The header that shows
 
 ![Settings page](docs/images/settings.png)
 
+**English / Korean interface** — it follows your browser language, and you can choose one in Settings → General → Language. Below is the Korean interface (the screenshots above show English).
+
+| Settings page | Toolbar popup |
+|---|---|
+| ![Korean settings page](docs/images/settings-ko.png) | ![Korean toolbar popup](docs/images/popup-ko.png) |
+
 ## Features
 
 The interface is available in **English and Korean**. It follows your browser language by default; change it in Settings (toolbar icon → Settings → General → Language). You can turn every feature on or off in Settings.
