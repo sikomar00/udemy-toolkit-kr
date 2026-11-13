@@ -58,10 +58,11 @@ The **My Course Tools** button at the bottom right opens a panel for working wit
 | Feature | What it does |
 |---|---|
 | Sorting | Bayesian rating (adjusted for review count), rating, reviews, last updated, students, duration, progress, purchase date, last accessed, first published, title |
-| Filters | Progress, minimum rating / reviews / students, duration range, updated within, category, course language, caption language, purchase date, last accessed, favorites, study queue, tags. Set the conditions and press **Apply** (or Enter); save them with **Save current filters** as a preset. |
+| Filters | Progress, minimum rating / reviews / students, duration range, updated within, category, course language, caption language, purchase date, last accessed, favorites, study queue, tags. Menus and checkboxes apply instantly; for typed values press **Apply** (or Enter). Save them with **Save current filters** as a preset. The last tab, filters and sorting are remembered and shown again next time (**Reset** clears them). |
 | Views | Active / Archived / All tabs, and a summary (course count, total hours, hours left, not-started count, average rating, top categories) |
-| Bulk actions | Archive / Unarchive, add or remove tags, add to or remove from the study queue for the selected courses. Each course can also have its own tags and notes. |
-| Export | CSV (for Notion import), Markdown checklist, JSON |
+| Selecting | Click a checkbox, then **Shift+click** another one to select or clear everything in between. The top checkbox selects only the rows you can see; if more courses match, a **Select all N matching courses** button appears. |
+| Bulk actions | Archive / Unarchive, add or remove tags, add to or remove from the study queue for the selected courses. After an archive finishes, **Undo** in the notification reverses it. Each course can also have its own tags and notes. |
+| Export | CSV (for Notion import), Markdown checklist, JSON. If courses are selected only those are exported (the buttons show `· N selected`); otherwise all courses in the filtered and sorted results are exported. |
 | Card badges | Adds rating, duration, update date and student count, plus a Queue marker, to Udemy's own course cards. |
 | Archive without reload | Handles the card menu's "Archive" without reloading the page, with an **Undo** button in the toast. |
 | Data refresh | **Refresh data** reloads the full course list. The automatic refresh interval (6 hours to 7 days) is set in Settings. |
@@ -126,7 +127,7 @@ To update, overwrite the files in the same folder and click the reload icon on `
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 59 unit tests + 107 integration tests
+npm test            # 59 unit tests + 120 integration tests
 npm run shots       # screenshots of the mock pages → tests/shots/
 ```
 

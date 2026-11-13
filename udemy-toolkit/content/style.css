@@ -79,6 +79,8 @@ textarea.uxk-input { resize: vertical; min-height: 80px; }
 .uxk-lib-bulk .uxk-btn { padding: 5px 9px; font-size: 12px; }
 .uxk-bulk-count { font: 700 13px var(--uxk-font); margin-right: 4px; }
 .uxk-lib-status { padding: 5px 16px; font: 12px var(--uxk-font); color: var(--uxk-muted); border-bottom: 1px solid #eee; }
+.uxk-selbanner { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f1ecff; border-bottom: 1px solid var(--uxk-line); font: 13px var(--uxk-font); }
+.uxk-selbanner[hidden] { display: none; }
 .uxk-lib-list { flex: 1; overflow: auto; }
 .uxk-lib-list table { width: 100%; border-collapse: collapse; }
 .uxk-lib-list th { position: sticky; top: 0; background: #fff; text-align: left; padding: 8px; border-bottom: 2px solid var(--uxk-line); font: 600 12px var(--uxk-font); white-space: nowrap; cursor: pointer; user-select: none; z-index: 1; }

@@ -236,6 +236,7 @@
     fieldsOk: (host) => 'uxk_fields_ok:' + hostKey(host),
     meta: 'uxk_meta', // {courseId: {tags:[], queue:bool, memo:''}}
     presets: 'uxk_presets',
+    libraryView: 'uxk_library_view', // {scope, filters}: 내 강의 패널을 마지막으로 닫을 때의 탭·필터·정렬
     notes: 'uxk_notes', // {courseId: [note]}
     sentences: 'uxk_sentences', // [sentence]
     speeds: 'uxk_speeds', // {courseId: rate, _global: rate}

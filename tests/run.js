@@ -76,6 +76,35 @@ async function libraryTests(page, mock) {
   const stats = await page.$eval('.uxk-lib-stats', (n) => n.textContent);
   check('요약 통계 표시', /250/.test(stats) && /not started/.test(stats), stats.slice(0, 120));
 
+  // Shift+클릭 범위 선택: 체크한 줄부터 Shift를 누르고 누른 줄까지 한꺼번에 같은 상태로
+  const rowBox = (i) => `.uxk-lib tbody tr:nth-child(${i + 1}) .uxk-sel`;
+  const checkedIdx = () => page.$$eval('.uxk-lib tbody tr', (rows) => rows.map((r, i) => (r.querySelector('.uxk-sel').checked ? i : -1)).filter((i) => i >= 0));
+  const bulkText = () => page.$eval('.uxk-bulk-count', (n) => n.textContent);
+  await page.click(rowBox(1));
+  await page.click(rowBox(5), { modifiers: ['Shift'] });
+  const r1 = await checkedIdx(), b1 = await bulkText();
+  check('Shift+클릭: 체크한 줄부터 Shift+클릭한 줄까지 한꺼번에 선택', JSON.stringify(r1) === '[1,2,3,4,5]' && /^5 selected/.test(b1), JSON.stringify(r1) + ' ' + b1);
+  await page.click(rowBox(3), { modifiers: ['Shift'] });
+  const r2 = await checkedIdx();
+  check('Shift+클릭: 누른 줄이 해제되면 그 범위도 한꺼번에 해제', JSON.stringify(r2) === '[1,2]', JSON.stringify(r2));
+  await page.click(rowBox(10));
+  await page.click(rowBox(7), { modifiers: ['Shift'] });
+  const r3 = await checkedIdx(), b3 = await bulkText();
+  check('Shift+클릭: 위쪽으로도 범위 선택, Shift 없이 누르면 한 줄만', JSON.stringify(r3) === '[1,2,7,8,9,10]' && /^6 selected/.test(b3), JSON.stringify(r3) + ' ' + b3);
+  check('Shift+클릭 뒤 일괄 보관 버튼 개수 갱신', /Archive \(6\)/.test(await page.$eval('[data-act="archive"]', (n) => n.textContent)));
+  await page.click('[data-act="sel-clear"]');
+  check('선택 해제 후 0개', (await checkedIdx()).length === 0 && /^0 selected/.test(await bulkText()));
+
+  // 안전한 전체 선택: 맨 위 체크박스는 보이는 줄만, 조건에 맞는 전체는 안내 단추로
+  await page.click('.uxk-all');
+  const bnr = await page.$eval('.uxk-selbanner', (n) => ({ hidden: n.hidden, text: n.textContent }));
+  const b4 = await bulkText();
+  check('맨 위 체크박스는 보이는 200줄만 선택하고 전체 선택 안내가 나옴', /^200 selected/.test(b4) && !bnr.hidden && /Select all 250 matching/.test(bnr.text), JSON.stringify(bnr) + ' ' + b4);
+  await page.click('[data-act="sel-all-matches"]');
+  check('안내 단추로 조건에 맞는 250개 전체 선택', /^250 selected/.test(await bulkText()) && /All 250 matching courses are selected/.test(await page.$eval('.uxk-selbanner', (n) => n.textContent)));
+  await page.click('[data-act="sel-clear"]');
+  check('선택을 해제하면 안내 줄도 사라짐', (await page.$eval('.uxk-selbanner', (n) => n.hidden)) && /^0 selected/.test(await bulkText()));
+
   const ratingsOf = () => page.$$eval('.uxk-lib tbody tr', (rows) => rows.map((r) => parseFloat(r.children[2].textContent)));
   await page.fill('input[data-f="minr"]', '4.5');
   const before = await ratingsOf();
@@ -142,6 +171,12 @@ async function libraryTests(page, mock) {
   check('일괄 보관 2개', mock.log.archivePosts.length - postsBefore === 2, ids.join(','));
   const seg2 = await page.$$eval('[data-scope]', (n) => n.map((x) => x.textContent));
   check('일괄 보관 후 개수 갱신', seg2[0].includes('248') && seg2[1].includes('32'), seg2.join(' / '));
+  // 일괄 보관 되돌리기(Undo): 같은 2개를 다시 보관 해제
+  const delBefore = mock.log.archiveDeletes.length;
+  await page.click('.uxk-toast-btn:text("Undo (2)")');
+  await waitToast(page, /Undo: Unarchive done: 2/, 15000);
+  const seg3 = await page.$$eval('[data-scope]', (n) => n.map((x) => x.textContent));
+  check('일괄 보관 → Undo로 2개 되돌림 (DELETE 2건, 개수 원래대로)', mock.log.archiveDeletes.length - delBefore === 2 && seg3[0].includes('250') && seg3[1].includes('30'), seg3.join(' / '));
   // 보관됨 탭 → 보관 해제
   await page.click('[data-scope="archived"]');
   await page.locator('.uxk-lib tbody tr .uxk-sel').nth(0).check();
@@ -158,6 +193,29 @@ async function libraryTests(page, mock) {
   check('Markdown 체크리스트', md.text.includes('- [ ] [') && md.text.includes('course_id='), md.name);
   const js = await readDownload(page, () => page.click('[data-act="json"]'));
   check('JSON 내보내기', JSON.parse(js.text).length > 200);
+
+  // 선택한 것만 내보내기
+  for (let i = 0; i < 2; i++) await page.locator('.uxk-lib tbody tr .uxk-sel').nth(i).check();
+  const csvLabel = await page.$eval('[data-act="csv"]', (n) => n.textContent);
+  const csv2 = await readDownload(page, () => page.click('[data-act="csv"]'));
+  const csvLines = csv2.text.split('\r\n').filter(Boolean).length;
+  check('고른 강의가 있으면 그것만 내보냄 (단추 글자에도 표시)', /CSV · 2 selected/.test(csvLabel) && csvLines === 3, csvLabel + ' / ' + csvLines + '줄');
+  await page.click('[data-act="sel-clear"]');
+  check('선택을 풀면 내보내기 단추가 원래 글자로', (await page.$eval('[data-act="csv"]', (n) => n.textContent)) === 'CSV (Notion)');
+
+  // 선택 상자는 Apply 없이 바로 적용, 새로고침해도 마지막 필터를 기억
+  const only100 = () => page.$$eval('.uxk-lib tbody tr', (rows) => rows.length > 0 && rows.every((r) => /100%/.test(r.children[8].textContent)));
+  await page.selectOption('select[data-f="prog"]', 'done');
+  check('선택 상자는 Apply 없이 바로 적용', await only100());
+  await page.waitForTimeout(900);
+  await page.goto('https://www.udemy.com/home/my-courses/learning/');
+  await page.waitForSelector('#uxk-fab', { timeout: 15000 });
+  await page.click('#uxk-fab');
+  await page.waitForSelector('.uxk-lib.uxk-open tbody tr', { timeout: 10000 });
+  const keptValue = await page.$eval('select[data-f="prog"]', (n) => n.value);
+  check('새로고침해도 마지막 필터(완료만)를 기억', keptValue === 'done' && (await only100()), keptValue);
+  await page.click('[data-act="reset"]');
+  await page.waitForTimeout(900);
   await page.click('[data-act="close"]');
 }
 

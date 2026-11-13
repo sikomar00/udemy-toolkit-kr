@@ -12,6 +12,7 @@
     P.panel.classList.add('uxk-open');
     P.fillOptions();
     P.writeForm(P.state.filters);
+    P.state.filters = P.readForm(); // 저장돼 있던 카테고리·태그가 지금 목록에 없으면 빈 값으로 정리 (보이지 않는 조건으로 목록이 걸러지는 일 방지)
     P.render();
     if (!P.cache || UXK.lib.isStale(P.cache, P.S.library.autoRefreshHours)) {
       try { await P.ensureData(!P.cache ? false : true); P.fillOptions(); P.render(); P.processCards(); } catch (err) { P.setStatus('Load failed: ' + err.message + ' (check that you are signed in)'); }
@@ -27,6 +28,7 @@
     started = true;
     P.meta = await UXK.lib.meta();
     P.presets = await UXK.local.get(UXK.KEYS.presets, {});
+    P.restoreView(await UXK.local.get(UXK.KEYS.libraryView, null));
     P.setCache(await UXK.lib.load());
     if (!started) return; // 초기화 도중 다른 페이지로 이동한 경우
     if (P.S.library.panel) {

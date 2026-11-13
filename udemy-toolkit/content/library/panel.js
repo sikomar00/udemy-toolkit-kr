@@ -65,7 +65,7 @@
       el('button', { class: 'uxk-btn', 'data-act': 'reset', text: 'Reset' }),
       el('button', { class: 'uxk-btn uxk-btn-primary', 'data-act': 'apply', text: 'Apply' }),
     ]);
-    const filters = el('details', { class: 'uxk-lib-filters', open: true }, [el('summary', { text: 'Filters & sorting (press Apply or Enter)' }), grid, filterRow]);
+    const filters = el('details', { class: 'uxk-lib-filters', open: true }, [el('summary', { text: 'Filters & sorting (menus apply instantly; press Apply or Enter after typing)' }), grid, filterRow]);
 
     const bulk = el('div', { class: 'uxk-lib-bulk' }, [
       el('span', { class: 'uxk-bulk-count', text: '0 selected' }),
@@ -84,7 +84,8 @@
     ]);
     const status = el('div', { class: 'uxk-lib-status' });
     const list = el('div', { class: 'uxk-lib-list' });
-    P.panel.append(head, stats, filters, bulk, status, list);
+    P.selBanner = el('div', { class: 'uxk-selbanner', role: 'status', hidden: true }); // 보이는 줄을 모두 고르면 "조건에 맞는 전체 선택" 안내를 보인다
+    P.panel.append(head, stats, filters, bulk, P.selBanner, status, list);
     document.body.appendChild(P.panel);
 
     // 이벤트
@@ -98,7 +99,11 @@
       const p = P.presets[presetSel.value];
       if (p) { writeForm(p); applyForm(); }
     });
+    // 선택 상자와 체크박스는 바꾸는 즉시 적용한다 (글자·숫자 입력은 Apply나 Enter)
+    P.panel.addEventListener('change', (e) => { if (e.target.matches('select[data-f], input[type="checkbox"][data-f]')) applyForm(); });
     list.addEventListener('change', P.onListChange);
+    list.addEventListener('click', P.onListClick);
+    list.addEventListener('mousedown', P.onListMouseDown);
   }
 
   function writeForm(f) {
@@ -196,7 +201,7 @@
     const flags = [c.favorite ? '<span class="uxk-chip uxk-chip-fav" title="Udemy favorite">Favorite</span>' : '', c.archived ? '<span class="uxk-chip uxk-chip-arc">Archived</span>' : ''].join('');
     const prog = Math.min(100, c.progress || 0);
     return `<tr data-id="${Number(c.id)}">
-      <td class="uxk-c"><input type="checkbox" class="uxk-sel" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
+      <td class="uxk-c"><input type="checkbox" class="uxk-sel" title="Shift+click another row to select the whole range" ${P.state.selected.has(c.id) ? 'checked' : ''}></td>
       <td class="uxk-title"><a href="/course-dashboard-redirect/?course_id=${Number(c.id)}" target="_blank" rel="noopener">${esc(c.title)}</a>
         <div class="uxk-sub">${sub}${flags}${tags}${m.memo ? `<span class="uxk-memo" title="${esc(m.memo)}">Note</span>` : ''}</div></td>
       <td class="uxk-n">${c.rating ? c.rating.toFixed(2) : '-'}</td>
@@ -226,9 +231,9 @@
     renderStats(rows);
     const slice = rows.slice(0, P.state.shown);
     const arrow = (k) => (P.state.sort.key === k ? (P.state.sort.dir === 'asc' ? ' ▲' : ' ▼') : '');
-    const allChecked = rows.length > 0 && rows.every((c) => P.state.selected.has(c.id));
+    const allChecked = slice.length > 0 && slice.every((c) => P.state.selected.has(c.id));
     const thead = COLS.map(([k, t], i) => (i === 0
-      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" ${allChecked ? 'checked' : ''} title="Select / deselect all ${rows.length} filtered courses (including rows not shown)"></th>`
+      ? `<th class="uxk-c"><input type="checkbox" class="uxk-all" ${allChecked ? 'checked' : ''} title="Select / deselect the ${slice.length} courses shown. Tip: Shift+click a row checkbox to select a range"></th>`
       : `<th ${k ? `data-k="${k}"` : ''}>${t}${arrow(k)}</th>`)).join('');
     $('.uxk-lib-list', P.panel).innerHTML = `<table><thead><tr>${thead}</tr></thead><tbody>${slice.map(rowHtml).join('')}</tbody></table>` +
       (rows.length > P.state.shown ? `<button class="uxk-btn uxk-more" data-act="more">Show more (${UXK.fmtNum(P.state.shown)} / ${UXK.fmtNum(rows.length)})</button>` : '');
@@ -238,12 +243,35 @@
     setStatus(`${UXK.fmtNum(rows.length)} matches · data as of ${new Date(P.cache.t).toLocaleString('en-US')} (${age < 60 ? age + ' min' : Math.round(age / 60) + ' h'} ago)` +
       (P.cache.fields && !P.cache.fields.includes('primary_category') ? ' · category/language/caption fields are not supported by this account\'s API' : ''));
     updateBulk();
+    P.saveViewSoon(); // 탭·필터·정렬이 바뀌었으면 다음에 열 때 그대로 보이게 저장
+  }
+
+  // 보이는 줄을 모두 골랐는데 조건에 맞는 강의가 더 있으면, 전부 고르는 단추를 안내한다 (실수로 수백 개를 한꺼번에 고르지 않게 맨 위 체크박스는 보이는 줄만 고른다)
+  function updateBanner() {
+    const b = P.selBanner;
+    if (!b) return;
+    const rows = P.currentRows(), shown = rows.slice(0, P.state.shown);
+    const has = (c) => P.state.selected.has(c.id);
+    const more = rows.length > shown.length;
+    const allShown = more && shown.length > 0 && shown.every(has);
+    b.textContent = '';
+    b.hidden = !allShown;
+    if (!allShown) return;
+    if (rows.every(has)) b.append(`All ${UXK.fmtNum(rows.length)} matching courses are selected.`);
+    else b.append(el('span', { text: `All ${UXK.fmtNum(shown.length)} shown courses are selected. ` }), el('button', { class: 'uxk-btn uxk-btn-ghost', 'data-act': 'sel-all-matches', text: `Select all ${UXK.fmtNum(rows.length)} matching courses` }));
   }
 
   function updateBulk() {
     const n = P.state.selected.size;
     const c = $('.uxk-bulk-count', P.panel);
     if (c) c.textContent = `${UXK.fmtNum(n)} selected`;
+    updateBanner();
+    // 내보내기 단추: 고른 강의가 있으면 그것만 내보낸다는 것을 글자로 보인다
+    const nExp = P.exportCount();
+    [['csv', 'CSV (Notion)', 'CSV'], ['md', 'Markdown checklist', 'Markdown'], ['json', 'JSON', 'JSON']].forEach(([act, base, sel]) => {
+      const b = $(`[data-act="${act}"]`, P.panel);
+      if (b) { b.textContent = nExp ? `${sel} · ${UXK.fmtNum(nExp)} selected` : base; b.title = nExp ? 'Only the selected courses are exported' : 'All courses in the current filtered and sorted results'; }
+    });
     const selData = [...P.state.selected].map((id) => P.byId.get(id)).filter(Boolean);
     const nActive = selData.filter((x) => !x.archived).length, nArch = selData.length - nActive;
     const set = (act, dis, label) => { const b = $(`[data-act="${act}"]`, P.panel); if (b) { b.disabled = P.state.busy || dis; if (label) b.textContent = label; } };
