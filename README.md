@@ -1,4 +1,4 @@
-# Udemy Toolkit KR
+# Toolkit for Udemy
 
 Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지를 강화하는 개인용 크롬 확장 프로그램(Manifest V3)입니다.
 빌드 과정이 없는 순수 JavaScript 구현입니다.
@@ -23,7 +23,7 @@ Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 단위 59개 + 통합 105개
+npm test            # 단위 59개 + 통합 107개
 npm run shots       # 화면 캡처 → tests/shots/
 ```
 
@@ -31,3 +31,5 @@ npm run shots       # 화면 캡처 → tests/shots/
 
 - Udemy 공식 API가 아닌 웹사이트 내부 API와 화면 구조를 사용하므로, Udemy가 구조를 바꾸면 일부 기능이 멈출 수 있습니다.
 - 메모·문장·태그·학습 기록·강의 목록은 이 브라우저 안에만 저장됩니다. 설정(단축키·옵션)은 크롬 동기화로 같은 계정의 다른 PC와 공유될 수 있습니다. 사용자가 켠 경우에 한해 기계번역만 자막 문장을 외부(구글)로 전송합니다.
+
+> **화면 언어:** 확장 프로그램의 화면(도구 막대 버튼, 설정, 팝업, 알림)은 모두 영어입니다. 설명 문서(이 파일, DESIGN.md, docs/)는 한국어입니다. 백업 파일의 식별값 `udemy-toolkit-kr`은 이전 백업과 호환되도록 그대로 둡니다.
