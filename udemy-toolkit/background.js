@@ -57,8 +57,8 @@ async function translateAll(texts, tl) {
     try {
       const res = await gtx(joined, tl);
       lines = res.split('\n');
-    } catch (e) { lines = null; }
-    if (lines && lines.length === idxs.length) {
+    } catch (e) { break; } // 요청이 막히거나 제한된 경우 계속 두드리지 않는다 (남은 문장은 빈 칸으로 두고 호출 쪽이 실패로 처리)
+    if (lines.length === idxs.length) {
       idxs.forEach((i, k) => { out[i] = lines[k].trim(); });
     } else {
       // 줄 수가 어긋나면 문장별로 다시 요청 (동시 4개)
@@ -86,7 +86,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const has = await chrome.permissions.contains({ origins: [TRANSLATE_ORIGIN] });
       if (!has) throw new Error('옵션 페이지에서 기계번역 권한을 허용하세요');
       const texts = Array.isArray(msg.texts) ? msg.texts.slice(0, 5000) : [];
-      return translateAll(texts, String(msg.tl || 'ko'));
+      const out = await translateAll(texts, String(msg.tl || 'ko'));
+      // 번역된 문장이 하나도 없으면 성공으로 응답하지 않는다 (빈 번역이 캐시되어 보조 자막이 영영 비는 것을 막음)
+      if (texts.some((t) => String(t || '').trim()) && out.every((t) => !t)) throw new Error('번역 요청이 모두 실패했습니다 (구글 번역이 막혔거나 제한되었을 수 있습니다)');
+      return out;
     })().then((texts) => sendResponse({ ok: true, texts })).catch((e) => sendResponse({ ok: false, error: String(e.message || e) }));
     return true;
   }
@@ -110,7 +113,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-const LEARN_RE = /^https:\/\/[^/]*udemy\.com\/course\/[^/]+\/learn\//;
+const LEARN_RE = /^https:\/\/([a-z0-9-]+\.)*udemy\.com\/course\/[^/]+\/learn\//;
 chrome.commands.onCommand.addListener(async (command, tab) => {
   let target = tab && LEARN_RE.test(tab.url || '') ? tab : null;
   if (!target) {

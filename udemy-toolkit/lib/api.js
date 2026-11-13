@@ -52,7 +52,7 @@
       if (res.status === 429 || res.status === 503 || res.status === 502) {
         if (attempt++ < retries) {
           const ra = parseFloat(res.headers.get('Retry-After'));
-          await UXK.sleep(Number.isFinite(ra) ? ra * 1000 : 1500 * Math.pow(2, attempt));
+          await UXK.sleep(Number.isFinite(ra) ? Math.min(ra, 30) * 1000 : 1500 * Math.pow(2, attempt)); // 서버가 아주 긴 대기를 요구해도 30초까지만
           continue;
         }
       }
@@ -73,11 +73,11 @@
 
   async function pool(items, limit, fn) {
     const out = new Array(items.length);
-    let i = 0;
+    let i = 0, failed = false;
     const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-      while (i < items.length) {
+      while (i < items.length && !failed) {
         const idx = i++;
-        out[idx] = await fn(items[idx], idx);
+        try { out[idx] = await fn(items[idx], idx); } catch (e) { failed = true; throw e; } // 한 곳이 실패하면 다른 작업자도 더 요청하지 않는다
       }
     });
     await Promise.all(workers);
@@ -111,26 +111,33 @@
     await request('GET', listUrl(BASE_FIELDS, { archived: false, pageSize: 1 }), null, { retries: 1 });
     // 2) 확장 필드 전체 → 실패하면 하나씩
     let fields = BASE_FIELDS.concat(EXTRA_FIELDS);
+    let transient = false; // 일시 오류(429·5xx·네트워크)로 확장 필드를 못 쓴 경우는 일주일간 캐시하지 않는다
+    const noteFailure = (e) => {
+      if (e.status === 401 || e.status === 403) throw e;
+      if (!e.status || e.status === 429 || e.status >= 500) transient = true;
+    };
     try {
       await request('GET', listUrl(fields, { archived: false, pageSize: 1 }), null, { retries: 0 });
     } catch (e) {
-      if (e.status === 401 || e.status === 403) throw e;
+      noteFailure(e);
       fields = BASE_FIELDS.slice();
       for (const f of EXTRA_FIELDS) {
         try {
           await request('GET', listUrl(BASE_FIELDS.concat(f), { archived: false, pageSize: 1 }), null, { retries: 0 });
           fields.push(f);
         } catch (e2) {
-          if (e2.status === 401 || e2.status === 403) throw e2;
+          noteFailure(e2);
         }
       }
     }
-    await UXK.local.set(key, { t: Date.now(), fields });
+    if (!transient) await UXK.local.set(key, { t: Date.now(), fields });
     return fields;
   }
 
   async function listCourses({ archived, fields, onPage, signal }) {
     const first = await request('GET', listUrl(fields, { archived, page: 1 }), null, { signal });
+    // 로그인 안내 같은 HTML이 200으로 오면 목록이 비어 보여 기존 캐시를 덮어쓰게 되므로 형식을 확인
+    if (!first || !Array.isArray(first.results)) throw new Error('강의 목록 응답 형식이 예상과 다릅니다 (로그인 상태를 확인하세요)');
     const total = first.count || (first.results || []).length;
     let results = (first.results || []).slice();
     onPage && onPage(results.length, total);
@@ -302,6 +309,8 @@
         try {
           const { active, archived, fields } = await UXK.api.fetchLibrary(onProgress);
           const data = active.map((c) => normalize(c, false)).concat(archived.map((c) => normalize(c, true)));
+          const prev = await this.load();
+          if (!data.length && prev && prev.data.length) throw new Error('빈 목록을 받아 기존 데이터를 유지했습니다');
           const cache = { t: Date.now(), fields, data };
           await this.save(cache);
           await UXK.local.remove('uxk_refresh_fail:' + location.host);

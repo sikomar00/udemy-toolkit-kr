@@ -138,7 +138,7 @@ textarea.uxk-input { resize: vertical; min-height: 80px; }
   position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 2px; background: rgba(20,20,24,.78);
   border-radius: 8px; padding: 3px; pointer-events: auto; opacity: 0; transition: opacity .2s;
 }
-.uxk-host:hover .uxk-toolbar, .uxk-toolbar:hover, .uxk-toolbar.uxk-flash, :fullscreen .uxk-toolbar:hover { opacity: 1; }
+.uxk-host:hover .uxk-toolbar, .uxk-toolbar:hover, .uxk-toolbar:focus-within, .uxk-toolbar.uxk-flash, :fullscreen .uxk-toolbar:hover { opacity: 1; }
 .uxk-tb-btn, .uxk-tb-speed { background: transparent; border: 0; color: #fff; font: 600 12px/1 var(--uxk-font); padding: 7px 8px; border-radius: 6px; cursor: pointer; }
 .uxk-tb-btn:hover, .uxk-tb-speed:hover { background: rgba(255,255,255,.16); }
 .uxk-tb-btn.uxk-on { background: rgba(140,110,255,.5); }
@@ -161,7 +161,7 @@ html.uxk-theater [class*="curriculum-item-view--aspect-ratio-container"] { max-h
   position: absolute; left: 10px; top: 10px; background: rgba(20,20,24,.78); color: #fff; border: 0; pointer-events: auto;
   border-radius: 8px; padding: 8px 10px; font: 600 12px/1 var(--uxk-font); cursor: pointer; opacity: 0; transition: opacity .2s;
 }
-.uxk-host:hover .uxk-pill, .uxk-pill:hover, .uxk-toolbar.uxk-flash ~ .uxk-pill { opacity: 1; }
+.uxk-host:hover .uxk-pill, .uxk-pill:hover, .uxk-pill:focus-visible, .uxk-toolbar.uxk-flash ~ .uxk-pill { opacity: 1; }
 .uxk-pill:hover { background: rgba(0,0,0,.92); }
 .uxk-sec-tools { display: flex; gap: 6px; padding: 6px 12px; }
 .uxk-sec-btn { font: 600 11px var(--uxk-font); color: var(--uxk-accent); background: #fff; border: 1px solid #c8bdf0; border-radius: 12px; padding: 3px 9px; cursor: pointer; }

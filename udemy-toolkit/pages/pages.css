@@ -3,7 +3,7 @@
   font-family: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --text: #ececf1; --muted: #a3a6b4; --line: #3a3c48; --bg: #17181c; --card: #22232a; --accent: #8d74f0; --accent-d: #a592f5; }
+  :root { --text: #ececf1; --muted: #a3a6b4; --line: #3a3c48; --bg: #17181c; --card: #22232a; --accent: #8d74f0; --accent-d: #a592f5; --danger: #ff8a73; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
@@ -13,7 +13,7 @@ button, .btn {
   border-radius: 7px; padding: 7px 12px; cursor: pointer;
 }
 button:hover { border-color: var(--accent); }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary { background: #5b3cc4; border-color: #5b3cc4; color: #fff; } /* 어두운 모드의 밝은 --accent 위에서는 흰 글씨 대비가 부족해 고정색 사용 */
 button.danger { color: var(--danger); border-color: var(--danger); }
 input[type=text], input[type=number], select, textarea {
   font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px;
@@ -67,5 +67,7 @@ body.popup { width: 340px; }
 .meter i { display: block; height: 100%; background: var(--ok); }
 .toggle { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 13px; }
 .pop .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pop .btns #diag { grid-column: 1 / -1; }
+.pop pre { margin: 0 0 6px; white-space: pre-wrap; font: 12px/1.5 ui-monospace, monospace; max-height: 220px; overflow: auto; }
 .speed-row { display: flex; align-items: center; gap: 8px; }
 .speed-row b { min-width: 56px; text-align: center; font-size: 16px; }

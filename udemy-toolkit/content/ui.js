@@ -61,8 +61,9 @@
     modalStack.forEach((m) => { const host = layer(); if (m.back.parentNode !== host) host.appendChild(m.back); });
   });
 
-  function modal({ title, body, buttons = [{ label: '확인', value: true, primary: true }], width = 460, onOpen, closeValue = null }) {
+  function modal({ title, body, buttons = [{ label: '확인', value: true, primary: true }], width = 460, onOpen, closeValue = null, dismissOnBackdrop = true }) {
     return new Promise((resolve) => {
+      const prevFocus = document.activeElement;
       const back = el('div', { class: 'uxk-modal-back' });
       const box = el('div', { class: 'uxk-modal', role: 'dialog', 'aria-modal': 'true', style: { width: `min(${width}px, calc(100vw - 32px))` } });
       const head = el('div', { class: 'uxk-modal-head' }, [el('strong', { text: title || '' })]);
@@ -77,6 +78,7 @@
         const i = modalStack.indexOf(entry);
         if (i >= 0) modalStack.splice(i, 1);
         back.remove();
+        if (prevFocus && prevFocus.isConnected && prevFocus.focus) { try { prevFocus.focus(); } catch (e) {} } // 닫으면 열기 전 위치로 키보드 초점 복원
         resolve(v);
       };
       entry.finish = finish;
@@ -90,12 +92,12 @@
       box.addEventListener('keydown', (e) => e.stopPropagation());
       box.addEventListener('keyup', (e) => e.stopPropagation());
       box.addEventListener('keypress', (e) => e.stopPropagation());
-      back.addEventListener('mousedown', (e) => { if (e.target === back) finish(closeValue); });
+      back.addEventListener('mousedown', (e) => { if (dismissOnBackdrop && e.target === back) finish(closeValue); });
       box.append(head, content, foot);
       back.appendChild(box);
       layer().appendChild(back);
       if (onOpen) onOpen(content, finish);
-      const first = content.querySelector('textarea, input, select, button') || foot.querySelector('.uxk-btn-primary');
+      const first = content.querySelector('textarea, input, select, button') || foot.querySelector('.uxk-btn-primary') || foot.querySelector('.uxk-btn'); // 위험 확인창은 기본 강조 버튼이 없으므로 첫 버튼(취소)에 초점
       if (first) setTimeout(() => first.focus(), 0);
     });
   }
@@ -115,9 +117,10 @@
         { label: '취소', value: null },
         { label: okLabel, value: () => input.value, primary: true },
       ],
+      dismissOnBackdrop: false, // 입력 중인 내용이 바깥 클릭 한 번에 사라지지 않게 (Esc·취소는 그대로)
       onOpen: (content, finish) => {
         input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && (!multiline || e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(input.value); }
+          if (e.key === 'Enter' && !e.isComposing && (!multiline || e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(input.value); }
         });
       },
     });
