@@ -3,7 +3,7 @@
   const UXK = (globalThis.UXK = globalThis.UXK || {});
   if (UXK.__common) return;
   UXK.__common = true;
-  UXK.VERSION = '2.0.0';
+  UXK.VERSION = '2.1.0';
 
   // ---------------- 기본 설정 ----------------
   UXK.DEFAULTS = {
@@ -242,6 +242,7 @@
     sentences: 'uxk_sentences', // [sentence]
     speeds: 'uxk_speeds', // {courseId: rate, _global: rate}
     stats: 'uxk_stats', // {days: {YYYY-MM-DD: {sec, courses:{id:sec}}}}
+    feedback: 'uxk_feedback', // {done: bool, snoozeUntil: ms}: 평가 요청 카드를 닫은 기록 (이 기기에만 저장, 백업에는 넣지 않음)
     curriculum: (id) => 'uxk_cur_' + id,
   };
 
@@ -283,6 +284,22 @@
       n.append(c instanceof Node ? c : document.createTextNode(T(String(c))));
     });
     return n;
+  };
+
+  UXK.LINKS = {
+    store: 'https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl',
+    reviews: 'https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl/reviews',
+    issues: 'https://github.com/sikomar00/udemy-toolkit-kr/issues',
+    source: 'https://github.com/sikomar00/udemy-toolkit-kr',
+  };
+
+  // 평가 요청 카드를 보일 때: 충분히 써 본 사람에게만 (누적 시청 3시간 이상, 하루 1분 넘게 본 날이 3일 이상).
+  // 닫기(done)와 미루기(snoozeUntil)를 존중한다. 평가를 대가로 기능을 열어 주거나 막지 않는다 (웹 스토어 정책)
+  UXK.reviewDue = function (stats, fb, now = Date.now()) {
+    if (fb && (fb.done || (fb.snoozeUntil || 0) > now)) return false;
+    const days = Object.values((stats && stats.days) || {});
+    const total = days.reduce((a, d) => a + ((d && d.sec) || 0), 0);
+    return total >= 3 * 3600 && days.filter((d) => d && d.sec >= 60).length >= 3;
   };
 
   UXK.fmtClock = function (sec) {

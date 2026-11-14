@@ -8,6 +8,7 @@
 
   let S = await UXK.getSettings();
   UXK.i18n.initPage(S);
+  $$('[data-link]').forEach((a) => { a.href = UXK.LINKS[a.dataset.link]; });
   const getPath = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
   const build = (path, val) => path.split('.').reduceRight((acc, k) => ({ [k]: acc }), val);
   const savedEl = $('#saved');

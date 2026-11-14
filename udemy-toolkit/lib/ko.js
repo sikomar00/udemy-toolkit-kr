@@ -174,6 +174,9 @@
     'This overwrites your current data with the backup. Continue?': '현재 데이터를 백업 내용으로 덮어씁니다. 계속할까요?', 'Could not save "{0}"': '"{0}"을(를) 저장하지 못했습니다', 'Restore complete': '복원 완료',
     'Restore failed: {0}': '복원 실패: {0}', '{0} cache entries deleted': '캐시 {0}개 삭제됨', 'Reset all settings to defaults? (Notes, sentences and stats are kept)': '모든 설정을 기본값으로 되돌릴까요? (메모·문장·학습 기록은 유지됩니다)',
     'Permission not granted; turned off': '권한이 허용되지 않아 꺼졌습니다',
+    'Enjoying Toolkit for Udemy?': 'Toolkit for Udemy, 잘 쓰고 계신가요?', 'A short review helps other learners find it. Bug reports and ideas are welcome too.': '짧은 평가를 남겨 주시면 다른 학습자가 찾는 데 도움이 됩니다. 문제 제보와 아이디어도 환영합니다.',
+    'Leave a review': '평가 남기기', 'Report a problem': '문제 제보', 'Maybe later': '나중에', "Don't ask again": '다시 묻지 않기',
+    'Rate on the Chrome Web Store': 'Chrome 웹 스토어에서 평가하기', 'Report a problem or suggest a feature': '문제 제보·기능 제안', 'Source code on GitHub': 'GitHub 소스 코드',
   });
   // 값을 넣어 쓰는 틀 전용 (자세한 뜻은 lib/i18n.js의 add)
   UXK.i18n.add('ko', { '{0}h': '{0}시간', 'Course {0}': '강의 {0}' }, { exact: true });
