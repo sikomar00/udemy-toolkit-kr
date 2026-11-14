@@ -1,12 +1,32 @@
 {
-  "extName": { "message": "Toolkit for Udemy" },
-  "extDescription": { "message": "비공식 Udemy 도구 모음: 내 강의 도구, 속도·단축키, 이중 자막, 문장 반복, 메모, PiP, 캡처, 학습 기록." },
-  "cmdTogglePlay": { "message": "재생 / 일시정지 (다른 탭에서도 동작)" },
-  "cmdSeekBack": { "message": "뒤로 이동" },
-  "cmdSeekForward": { "message": "앞으로 이동" },
-  "cmdScreenshot": { "message": "영상 화면 캡처 (보호된 영상에서도 동작)" },
-  "cmdSpeedUp": { "message": "속도 높이기" },
-  "cmdSpeedDown": { "message": "속도 낮추기" },
-  "cmdNextLecture": { "message": "다음 강의" },
-  "cmdQuickNote": { "message": "타임스탬프 메모" }
+  "extName": {
+    "message": "Toolkit for Udemy"
+  },
+  "extDescription": {
+    "message": "Udemy 이중 자막, 최대 16배속, 강의 대본 한 번에 복사, 내 강의 일괄 정리. 비공식·무료·오픈소스, 계정 필요 없음."
+  },
+  "cmdTogglePlay": {
+    "message": "재생 / 일시정지 (다른 탭에서도 동작)"
+  },
+  "cmdSeekBack": {
+    "message": "뒤로 이동"
+  },
+  "cmdSeekForward": {
+    "message": "앞으로 이동"
+  },
+  "cmdScreenshot": {
+    "message": "영상 화면 캡처 (보호된 영상에서도 동작)"
+  },
+  "cmdSpeedUp": {
+    "message": "속도 높이기"
+  },
+  "cmdSpeedDown": {
+    "message": "속도 낮추기"
+  },
+  "cmdNextLecture": {
+    "message": "다음 강의"
+  },
+  "cmdQuickNote": {
+    "message": "타임스탬프 메모"
+  }
 }

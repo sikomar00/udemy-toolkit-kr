@@ -8,7 +8,12 @@
 
   let S = await UXK.getSettings();
   UXK.i18n.initPage(S);
-  $$('[data-link]').forEach((a) => { a.href = UXK.LINKS[a.dataset.link]; });
+  // 아래쪽 링크: 주소가 정해진 것만 보인다 (후원 주소가 비어 있으면 후원 링크는 빠진다)
+  const ABOUT = [['reviews', 'Rate on the Chrome Web Store'], ['issues', 'Report a problem or suggest a feature'], ['source', 'Source code on GitHub'], ['support', 'Buy me a coffee']];
+  ABOUT.filter(([k]) => UXK.LINKS[k]).forEach(([k, label], i) => {
+    if (i) $('#about-links').append(' · ');
+    $('#about-links').append(UXK.el('a', { href: UXK.LINKS[k], target: '_blank', rel: 'noopener', 'data-link': k, text: label }));
+  });
   const getPath = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
   const build = (path, val) => path.split('.').reduceRight((acc, k) => ({ [k]: acc }), val);
   const savedEl = $('#saved');
