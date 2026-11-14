@@ -293,13 +293,23 @@
     source: 'https://github.com/sikomar00/udemy-toolkit-kr',
   };
 
-  // 평가 요청 카드를 보일 때: 충분히 써 본 사람에게만 (누적 시청 3시간 이상, 하루 1분 넘게 본 날이 3일 이상).
-  // 닫기(done)와 미루기(snoozeUntil)를 존중한다. 평가를 대가로 기능을 열어 주거나 막지 않는다 (웹 스토어 정책)
+  // 평가를 물어도 되는 상태인가: 닫기(done)·미루기(snoozeUntil)를 존중하고, 한 번 물은 뒤 30일(askedAt)은 쉰다.
+  // 팝업 카드와 만족한 순간 알림이 같은 기록을 쓴다. 평가를 대가로 기능을 열어 주거나 막지 않는다 (웹 스토어 정책)
+  const reviewAllowed = (fb, now) => { const f = fb || {}; return !f.done && !((f.snoozeUntil || 0) > now) && !((f.askedAt || 0) > now - 30 * 864e5); };
+
+  // 팝업 카드: 충분히 써 본 사람에게만 (누적 시청 3시간 이상, 하루 1분 넘게 본 날이 3일 이상)
   UXK.reviewDue = function (stats, fb, now = Date.now()) {
-    if (fb && (fb.done || (fb.snoozeUntil || 0) > now)) return false;
+    if (!reviewAllowed(fb, now)) return false;
     const days = Object.values((stats && stats.days) || {});
     const total = days.reduce((a, d) => a + ((d && d.sec) || 0), 0);
     return total >= 3 * 3600 && days.filter((d) => d && d.sec >= 60).length >= 3;
+  };
+
+  // 만족한 순간 알림: 기능이 방금 도움이 된 순간(문턱을 넘었을 때)에만 묻는다
+  UXK.REVIEW_MOMENTS = { bulk: 5, transcript: 3, sentences: 10 }; // 일괄 처리 5개 이상, 대본 복사 3번째, 저장한 문장 10개
+  UXK.reviewMomentDue = function (fb, kind, value, now = Date.now()) {
+    const need = UXK.REVIEW_MOMENTS[kind];
+    return !!need && value >= need && reviewAllowed(fb, now);
   };
 
   UXK.fmtClock = function (sec) {

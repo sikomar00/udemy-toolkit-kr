@@ -192,6 +192,7 @@
     P.render();
     const undo = !isUndo && doneIds.length ? [{ label: `Undo (${doneIds.length})`, onClick: () => { runBulk(doneIds, !toArchive, true).catch((err) => UXK.ui.toast(err && err.message ? err.message : String(err), { kind: 'err', timeout: 7000 })); } }] : [];
     UXK.ui.toast(`${isUndo ? UXK.t('Undo: ') : ''}${stopped ? UXK.t('Stopped · ') : ''}${UXK.t('{0} done: {1}', UXK.t(verb), done)}${failed.length ? UXK.t(', {0} failed (selection kept)', failed.length) : ''}${UXK.t(' · no reload needed')}`, { timeout: undo.length ? 15000 : 6000, actions: undo });
+    if (!isUndo && !failed.length) setTimeout(() => UXK.ui.askReview('bulk', done), 1500); // 정리가 잘 끝난 순간 (결과 알림을 먼저 읽게 잠시 뒤)
   }
 
   // ---------------- 내보내기 ----------------

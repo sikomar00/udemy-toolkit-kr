@@ -183,5 +183,32 @@
   };
   const icon = (name, filled = false) => `<svg class="uxk-svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
 
-  UXK.ui = { toast, modal, prompt, confirm, drawer, layer, isModalOpen, trapTab, icon };
+  // 만족한 순간에 한 번 평가를 부탁하는 알림 (UXK.reviewMomentDue가 때를 정한다). value가 없으면 kind별 횟수를 세어서 쓴다
+  async function askReview(kind, value) {
+    const save = (patch) => UXK.local.update(UXK.KEYS.feedback, (o) => ({ ...(o || {}), ...patch }), {});
+    try {
+      let fb = (await UXK.local.get(UXK.KEYS.feedback, {})) || {};
+      if (value == null) {
+        const key = kind + 'Count';
+        fb = await save({ [key]: (fb[key] || 0) + 1 });
+        value = fb[key];
+      }
+      if (!UXK.reviewMomentDue(fb, kind, value)) return false;
+      await save({ askedAt: Date.now() });
+      toast('Glad that helped! If Toolkit for Udemy saves you time, a short review helps other learners find it.', {
+        id: 'uxk-review', timeout: 20000, actions: [
+          { label: 'Leave a review', onClick: () => { window.open(UXK.LINKS.reviews, '_blank', 'noopener'); save({ done: true }); } },
+          { label: 'Maybe later', onClick: () => save({ snoozeUntil: Date.now() + 30 * 864e5 }) },
+          { label: "Don't ask again", onClick: () => save({ done: true }) },
+        ],
+      });
+      return true;
+    } catch (e) {
+      // 평가 요청은 덧붙이는 기능이라 저장소 오류가 나도 방금 끝난 본 작업(보관·복사·저장)을 실패로 보이지 않게 한다
+      if (UXK.log) UXK.log('review prompt skipped', e && e.message);
+      return false;
+    }
+  }
+
+  UXK.ui = { toast, modal, prompt, confirm, drawer, layer, isModalOpen, trapTab, icon, askReview };
 })();

@@ -177,6 +177,7 @@
     'Enjoying Toolkit for Udemy?': 'Toolkit for Udemy, 잘 쓰고 계신가요?', 'A short review helps other learners find it. Bug reports and ideas are welcome too.': '짧은 평가를 남겨 주시면 다른 학습자가 찾는 데 도움이 됩니다. 문제 제보와 아이디어도 환영합니다.',
     'Leave a review': '평가 남기기', 'Report a problem': '문제 제보', 'Maybe later': '나중에', "Don't ask again": '다시 묻지 않기',
     'Watch time, last 14 days: {0}': '최근 14일 시청 시간: {0}', "Today's goal": '오늘 목표',
+    'Glad that helped! If Toolkit for Udemy saves you time, a short review helps other learners find it.': '도움이 됐다니 다행이에요! 시간을 아껴 드렸다면, 짧은 평가가 다른 학습자가 찾는 데 큰 도움이 됩니다.',
     'Rate on the Chrome Web Store': 'Chrome 웹 스토어에서 평가하기', 'Report a problem or suggest a feature': '문제 제보·기능 제안', 'Source code on GitHub': 'GitHub 소스 코드',
   });
   // 값을 넣어 쓰는 틀 전용 (자세한 뜻은 lib/i18n.js의 add)
