@@ -3,7 +3,7 @@
   const UXK = (globalThis.UXK = globalThis.UXK || {});
   if (UXK.__common) return;
   UXK.__common = true;
-  UXK.VERSION = '2.1.0';
+  UXK.VERSION = '2.1.1';
 
   // ---------------- 기본 설정 ----------------
   UXK.DEFAULTS = {
