@@ -158,6 +158,9 @@
     const N = 14;
     const vals = Array.from({ length: N }, (_, k) => secOf(dayKey(N - 1 - k)));
     const max = Math.max(goal, ...vals, 60);
+    const barsText = vals.map((v, k) => `${dayKey(N - 1 - k).slice(5)} ${UXK.t('{0} min', Math.round(v / 60))}`).join(', ');
+    $('#bars').setAttribute('role', 'img');
+    $('#bars').setAttribute('aria-label', UXK.t('Watch time, last 14 days: {0}', barsText));
     $('#bars').innerHTML = vals.map((v) => `<div class="b ${goal && v >= goal ? 'goal' : ''}" style="height:${Math.max(2, (v / max) * 100)}%" title="${UXK.t('{0} min', Math.round(v / 60))}"></div>`).join('');
     $('#bars-labels').innerHTML = Array.from({ length: N }, (_, k) => `<span>${dayKey(N - 1 - k).slice(5)}</span>`).join('');
     const per = new Map();

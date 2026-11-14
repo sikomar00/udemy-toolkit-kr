@@ -175,5 +175,13 @@
     drawers.forEach((d) => { if (d.isOpen()) { const host = layer(); if (d.root.parentNode !== host) host.appendChild(d.root); } });
   });
 
-  UXK.ui = { toast, modal, prompt, confirm, drawer, layer, isModalOpen, trapTab };
+  // 선 아이콘(24×24 SVG). ☆ ✎ ⋯ 같은 글자 기호는 글꼴마다 크기·굵기가 달라 SVG로 통일한다. 화면 낭독기에는 단추 이름만 읽히게 숨긴다
+  const ICONS = {
+    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+    pencil: '<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="M14.5 5.5l3 3"/>',
+    more: '<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>',
+  };
+  const icon = (name, filled = false) => `<svg class="uxk-svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+
+  UXK.ui = { toast, modal, prompt, confirm, drawer, layer, isModalOpen, trapTab, icon };
 })();

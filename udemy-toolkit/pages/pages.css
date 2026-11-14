@@ -19,7 +19,7 @@ input[type=text], input[type=number], select, textarea {
   font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px;
 }
 input[type=number] { width: 100px; }
-input[type=range] { width: 180px; vertical-align: middle; }
+input[type=range] { width: 180px; height: 24px; vertical-align: middle; cursor: pointer; }
 kbd { font: 600 12px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; background: var(--card); }
 .muted { color: var(--muted); font-size: 12px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -48,7 +48,8 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 .bars { display: flex; align-items: flex-end; gap: 4px; height: 90px; padding: 6px 0; }
 .bars .b { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; position: relative; opacity: .85; }
 .bars .b.goal { background: var(--ok); }
-.bars-labels { display: flex; gap: 4px; font-size: 10px; color: var(--muted); }
+.bars-labels { display: flex; gap: 4px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .bars-labels span:nth-child(even) { visibility: hidden; } } /* 좁으면 날짜를 하루 걸러 보여 겹치지 않게 */
 .bars-labels span { flex: 1; text-align: center; }
 .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .kpi { background: var(--bg); border-radius: 8px; padding: 8px 12px; min-width: 120px; }

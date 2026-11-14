@@ -96,7 +96,9 @@
     P.subsBox = el('div', { class: 'uxk-subs', title: 'Drag to move' }, [P.sub1, P.sub2]);
     P.speedLabel = el('button', { class: 'uxk-tb-speed', title: 'Click: 1x ↔ previous speed' });
     const b = (label, title, fn, cls = '', toggleKey = '') => {
-      const n = el('button', { type: 'button', class: 'uxk-tb-btn ' + cls, title, text: label });
+      const glyph = !/[\p{L}\p{N}]/u.test(label); // − + ⋯ 처럼 글자가 없는 단추
+      const n = el('button', { type: 'button', class: 'uxk-tb-btn ' + cls, title, 'aria-label': glyph ? title : null, text: label === '⋯' ? null : label });
+      if (label === '⋯') n.innerHTML = UXK.ui.icon('more');
       n.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fn(e); });
       if (toggleKey) { n.setAttribute('aria-pressed', 'false'); toggles[toggleKey] = n; }
       return n;
