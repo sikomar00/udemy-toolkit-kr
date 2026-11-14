@@ -28,6 +28,15 @@
   for (let k = 0; k < 7; k++) week += secOf(dayKey(k));
   $('#streak').textContent = UXK.t('{0}-day streak · last 7 days {1}', streak, UXK.fmtDur(week));
 
+  // 평가 요청: 많이 써 본 사람에게만 조용히 한 번 묻는다. 닫기·미루기를 존중하고, 평가를 대가로 기능을 막거나 열어 주지 않는다
+  const fb = (await UXK.local.get(UXK.KEYS.feedback, {})) || {};
+  if (UXK.reviewDue(st, fb)) $('#review').hidden = false;
+  const closeReview = async (patch) => { $('#review').hidden = true; await UXK.local.update(UXK.KEYS.feedback, (o) => ({ ...(o || {}), ...patch }), {}); };
+  $('#review-go').onclick = () => { chrome.tabs.create({ url: UXK.LINKS.reviews }); closeReview({ done: true }); };
+  $('#review-issue').onclick = () => chrome.tabs.create({ url: UXK.LINKS.issues });
+  $('#review-later').onclick = () => closeReview({ snoozeUntil: Date.now() + 30 * 864e5 });
+  $('#review-never').onclick = () => closeReview({ done: true });
+
   // 현재 탭이 Udemy 강의라면 제어
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const isLearn = tab && /^https:\/\/([a-z0-9-]+\.)*udemy\.com\/course\/[^/]+\/learn\//.test(tab.url || '');

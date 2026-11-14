@@ -568,6 +568,50 @@ async function optionsTests(context, sw, extId) {
   await opt.emulateMedia({ colorScheme: null });
   await pop.click('#diag');
   check('팝업: Udemy 탭이 아니면 점검 안내', (await pop.$eval('#diag-out', (n) => n.textContent)).includes('Udemy tab'));
+
+  // 평가 요청 카드: 많이 쓴 사람에게만, 닫기·미루기 존중, 링크는 웹 스토어 평가·GitHub Issues
+  check('평가 요청: 처음에는 카드가 숨겨져 있음', await pop.$eval('#review', (n) => n.hidden));
+  const fbOf = () => sw.evaluate(async () => (await chrome.storage.local.get('uxk_feedback')).uxk_feedback || null);
+  const setFb = (v) => sw.evaluate(async (x) => { if (x) await chrome.storage.local.set({ uxk_feedback: x }); else await chrome.storage.local.remove('uxk_feedback'); }, v);
+  await sw.evaluate(async () => { const st = (await chrome.storage.local.get('uxk_stats')).uxk_stats || { days: {} }; st.days = st.days || {}; for (let i = 1; i <= 4; i++) st.days['seed-' + i] = { sec: 3600, courses: {} }; await chrome.storage.local.set({ uxk_stats: st }); });
+  // 실제 사이트를 열지 않도록 탭 열기를 가로채서 주소만 모은다
+  const stubTabs = () => pop.evaluate(() => { window.__opened = []; chrome.tabs.create = (o) => { window.__opened.push(o.url); return Promise.resolve({}); }; });
+  const opened = () => pop.evaluate(() => window.__opened);
+  await pop.reload();
+  await pop.waitForSelector('#review:not([hidden])', { timeout: 5000 });
+  check('평가 요청: 3시간·3일 이상 쓰면 카드가 보임 (버튼 4개, 평가를 대가로 한 문구 없음)', (await pop.$$('#review button')).length === 4 && !/free|unlock|premium|5.?star|rate us/i.test(await pop.$eval('#review', (n) => n.textContent)), (await pop.$eval('#review', (n) => n.innerText)).replace(/\s+/g, ' ').slice(0, 120));
+  for (const scheme of ['light', 'dark']) {
+    await pop.emulateMedia({ colorScheme: scheme });
+    const rc = await lowContrastOf(pop, '#review');
+    check(`평가 요청 카드 글자 색 대비 (${scheme === 'light' ? '밝은' : '어두운'} 화면)`, rc.length === 0, rc.join(' | '));
+  }
+  await pop.emulateMedia({ colorScheme: null });
+  await stubTabs();
+  await pop.click('#review-issue');
+  check('평가 요청: "문제 제보"는 GitHub Issues를 열고 카드는 그대로', (await opened()).join() === 'https://github.com/sikomar00/udemy-toolkit-kr/issues' && !(await pop.$eval('#review', (n) => n.hidden)) && !(await fbOf()), (await opened()).join());
+  await pop.click('#review-later');
+  const later = await fbOf();
+  await pop.reload();
+  await pop.waitForFunction(() => document.getElementById('today-txt').textContent.length > 0);
+  check('평가 요청: "나중에"는 30일 미루고 다시 열어도 숨겨짐', later && later.snoozeUntil > Date.now() + 29 * 864e5 && !later.done && (await pop.$eval('#review', (n) => n.hidden)), JSON.stringify(later));
+  await setFb(null);
+  await pop.reload();
+  await pop.waitForSelector('#review:not([hidden])', { timeout: 5000 });
+  await stubTabs();
+  await pop.click('#review-go');
+  const goneAfterGo = await pop.$eval('#review', (n) => n.hidden);
+  const doneGo = await fbOf();
+  check('평가 요청: "평가 남기기"는 웹 스토어 평가 페이지를 열고 다시 묻지 않음', (await opened()).join() === 'https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl/reviews' && goneAfterGo && doneGo && doneGo.done === true, (await opened()).join());
+  await setFb(null);
+  await pop.reload();
+  await pop.waitForSelector('#review:not([hidden])', { timeout: 5000 });
+  await pop.click('#review-never');
+  await pop.reload();
+  await pop.waitForFunction(() => document.getElementById('today-txt').textContent.length > 0);
+  check('평가 요청: "다시 묻지 않기"는 영구히 숨김', (await fbOf()).done === true && (await pop.$eval('#review', (n) => n.hidden)));
+  await sw.evaluate(async () => { const st = (await chrome.storage.local.get('uxk_stats')).uxk_stats || { days: {} }; for (let i = 1; i <= 4; i++) delete st.days['seed-' + i]; await chrome.storage.local.set({ uxk_stats: st }); await chrome.storage.local.remove('uxk_feedback'); });
+  const aboutLinks = await opt.$$eval('.about a', (n) => n.map((a) => a.href));
+  check('설정 페이지 아래에 평가·제보·소스 링크', aboutLinks.length === 3 && aboutLinks[0].endsWith('/ckeooonobjmkdpdhijpphdhpploabmbl/reviews') && aboutLinks[1].endsWith('/issues') && aboutLinks[2] === 'https://github.com/sikomar00/udemy-toolkit-kr', aboutLinks.join(' '));
   const errs = [];
   opt.on('pageerror', (e) => errs.push(e.message));
   await opt.reload();
