@@ -257,8 +257,9 @@ for (const [label, dir, files] of SPLITS) {
   const addText = (s) => { s = s.replace(/\\n/g, '\n').replace(/\\'/g, "'"); if (/[A-Za-z]{3,}/.test(s)) uiTexts.add(s); };
   const quoted = /(['"])((?:\\.|(?!\1).)*)\1/g;
   for (const f of srcFiles) {
-    const src = fs.readFileSync(f, 'utf8');
+    let src = fs.readFileSync(f, 'utf8');
     if (f.endsWith('.html')) {
+      src = src.replace(/<(\w+)[^>]*\bdata-no-i18n\b[^>]*>[\s\S]*?<\/\1>/g, ''); // 번역하지 않기로 표시한 요소(제품 이름, 언어 이름 등)는 빼고 본다
       for (const m of src.matchAll(/>([^<>{}]*[A-Za-z]{3,}[^<>{}]*)</g)) addText(m[1].replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim());
       for (const m of src.matchAll(/\b(?:title|placeholder|aria-label)="([^"]*[A-Za-z]{3,}[^"]*)"/g)) addText(m[1].replace(/&amp;/g, '&'));
       continue;
