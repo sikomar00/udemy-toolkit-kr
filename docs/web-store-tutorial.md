@@ -22,9 +22,10 @@
 
 ```powershell
 New-Item -ItemType Directory -Force dist | Out-Null
-Remove-Item dist\udemy-toolkit-2.0.0.zip -ErrorAction SilentlyContinue
+$v = (Get-Content udemy-toolkit\manifest.json -Raw | ConvertFrom-Json).version
+Remove-Item "dist\udemy-toolkit-$v.zip" -ErrorAction SilentlyContinue
 Push-Location udemy-toolkit
-Compress-Archive -Path manifest.json, background.js, content, icons, lib, pages -DestinationPath ..\dist\udemy-toolkit-2.0.0.zip
+Compress-Archive -Path manifest.json, background.js, content, icons, lib, pages, _locales -DestinationPath "..\dist\udemy-toolkit-$v.zip"
 Pop-Location
 ```
 
@@ -123,7 +124,7 @@ Udemy 로그인이 있어야 기능이 보이므로, 심사자가 확인할 수 
 
 ## 10. 업데이트할 때
 
-1. `udemy-toolkit/manifest.json`의 `version`을 올립니다(예: `2.0.1`).
+1. `udemy-toolkit/manifest.json`의 `version`과 `lib/common.js`의 `UXK.VERSION`을 함께 올립니다(예: `2.1.0`). zip에는 `_locales` 폴더가 꼭 들어가야 합니다(위 명령에 포함).
 2. zip을 다시 만들어 대시보드의 같은 항목에서 **Package → Upload new package**로 올립니다.
 3. 바뀐 내용이 개인정보 항목에 영향을 주면(예: 새 권한, 새 외부 서버) 방침과 소명을 함께 고칩니다.
 4. **Submit for review**.

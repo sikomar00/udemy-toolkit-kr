@@ -21,9 +21,12 @@ Toolkit for Udemy is an unofficial, independent tool. It is not affiliated with,
 
 **My Learning and search**
 - "My Course Tools" panel: sort and filter your courses (rating, reviews, students, duration, progress, last updated, purchase date, caption language), tags, a study queue, notes, bulk archive, and export to CSV or Markdown.
+- Shift+click a checkbox to select a whole range, a safe "select all" that tells you when matches are hidden, bulk archive with one-click Undo, and export only the selected courses.
+- The panel remembers your last tab, filters and sorting.
 - Badges on course cards and "Owned" labels in search results to avoid buying a course twice.
 
 **Popup, settings and backup**
+- Keyboard and screen-reader friendly: named dialogs, focus kept inside panels, announced notifications, and checked color contrast.
 - Available in English and Korean. It follows your browser language by default; choose a language in Settings → General.
 - The toolbar popup shows today's study time, the speed and time left of the current lecture, and quick switches (Dual subtitles, Hide owned courses, Toolbar below video, Dark mode).
 - Check Page Structure tells you if a Udemy page change broke a feature, and lets you copy a report.
