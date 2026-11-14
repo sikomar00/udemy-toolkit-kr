@@ -2,6 +2,8 @@
 
 [한국어](README.md) · **English**
 
+[![CI](https://github.com/sikomar00/udemy-toolkit-kr/actions/workflows/ci.yml/badge.svg)](https://github.com/sikomar00/udemy-toolkit-kr/actions/workflows/ci.yml)
+
 An unofficial Chrome extension (Manifest V3) that improves Udemy's My Learning page, the lecture player, and the search and course landing pages. Plain JavaScript, no build step.
 
 **[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl)** · Report problems or suggest features in [GitHub Issues](https://github.com/sikomar00/udemy-toolkit-kr/issues). If it helps you, you can [buy me a coffee](https://buymeacoffee.com/ys_doing1).

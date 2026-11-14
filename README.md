@@ -2,6 +2,8 @@
 
 **한국어** · [English](README.en.md)
 
+[![CI](https://github.com/sikomar00/udemy-toolkit-kr/actions/workflows/ci.yml/badge.svg)](https://github.com/sikomar00/udemy-toolkit-kr/actions/workflows/ci.yml)
+
 Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지를 강화하는 개인용 크롬 확장 프로그램(Manifest V3)입니다.
 빌드 과정이 없는 순수 JavaScript 구현입니다.
 
