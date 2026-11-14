@@ -143,7 +143,7 @@ My Course Tools 패널, 대화상자, 알림, 팝업, 설정 화면은 키보드
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 단위 80개 + 통합 170개 (영어 144 + 한국어 26)
+npm test            # 단위 83개 + 통합 175개 (영어 149 + 한국어 26)
 npm run shots       # 화면 캡처 → tests/shots/
 ```
 
