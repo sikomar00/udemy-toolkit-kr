@@ -405,7 +405,7 @@ async function playerTests(page, mock, sw) {
   await page.click('.uxk-toolbar button:text("Copy Transcript")', { force: true });
   const askedOk = await waitToast(page, /Glad that helped/, 5000).then(() => true).catch(() => false);
   const reviewToast = await page.evaluate(() => { const t = [...document.querySelectorAll('.uxk-toast')].find((n) => /Glad that helped/.test(n.textContent)); return t ? { role: t.getAttribute('role'), btns: [...t.querySelectorAll('.uxk-toast-btn')].map((b) => b.textContent) } : null; });
-  check('만족한 순간: 대본 복사 3번째에 평가 요청 알림 (평가·나중에·다시 묻지 않기, 읽어 주는 status)', askedOk && reviewToast && reviewToast.role === 'status' && reviewToast.btns.join('|') === 'Leave a review|Maybe later|Don\'t ask again', JSON.stringify(reviewToast));
+  check('만족한 순간: 대본 복사 3번째에 평가 요청 알림 (평가·나중에·다시 묻지 않기·후원, 읽어 주는 status)', askedOk && reviewToast && reviewToast.role === 'status' && reviewToast.btns.join('|') === 'Leave a review|Maybe later|Don\'t ask again|Buy me a coffee', JSON.stringify(reviewToast));
   await page.click('.uxk-toast-btn:text("Don\'t ask again")');
   await sleep(300);
   await page.click('.uxk-toolbar button:text("Copy Transcript")', { force: true });
@@ -638,7 +638,7 @@ async function optionsTests(context, sw, extId) {
   check('평가 요청: "다시 묻지 않기"는 영구히 숨김', (await fbOf()).done === true && (await pop.$eval('#review', (n) => n.hidden)));
   await sw.evaluate(async () => { const st = (await chrome.storage.local.get('uxk_stats')).uxk_stats || { days: {} }; for (let i = 1; i <= 4; i++) delete st.days['seed-' + i]; await chrome.storage.local.set({ uxk_stats: st }); await chrome.storage.local.remove('uxk_feedback'); });
   const aboutLinks = await opt.$$eval('.about a', (n) => n.map((a) => a.href));
-  check('설정 페이지 아래에 평가·제보·소스 링크', aboutLinks.length === 3 && aboutLinks[0].endsWith('/ckeooonobjmkdpdhijpphdhpploabmbl/reviews') && aboutLinks[1].endsWith('/issues') && aboutLinks[2] === 'https://github.com/sikomar00/udemy-toolkit-kr', aboutLinks.join(' '));
+  check('설정 페이지 아래에 평가·제보·소스·후원 링크', aboutLinks.length === 4 && aboutLinks[0].endsWith('/ckeooonobjmkdpdhijpphdhpploabmbl/reviews') && aboutLinks[1].endsWith('/issues') && aboutLinks[2] === 'https://github.com/sikomar00/udemy-toolkit-kr' && aboutLinks[3] === 'https://buymeacoffee.com/ys_doing1', aboutLinks.join(' '));
   const errs = [];
   opt.on('pageerror', (e) => errs.push(e.message));
   await opt.reload();
