@@ -154,3 +154,7 @@ npm run shots       # screenshots of the mock pages → tests/shots/
 - The extension uses Udemy's website-internal APIs and page structure, not an official API. If Udemy changes them, some features may stop working. Use **Check Page Structure** in the popup to see which ones.
 - Notes, sentences, tags, study stats and the course list are stored only in this browser. Settings (hotkeys and options) may sync to your other computers through your Chrome account. Only if you turn it on, machine translation sends subtitle sentences to Google Translate.
 - The extension's own screens (toolbar buttons, settings, popup, notifications) are available in English and Korean. After changing the language, reload open Udemy tabs. Your own text (course titles, subtitles, notes) and the "Check Page Structure" report (for developers) are not translated. The design documents (`udemy-toolkit/README.md`, `udemy-toolkit/DESIGN.md`) are in Korean. The backup file marker `udemy-toolkit-kr` is kept so that older backups still import.
+
+## License
+
+[MIT](LICENSE). The Udemy trademark and course content are not covered by this license.
