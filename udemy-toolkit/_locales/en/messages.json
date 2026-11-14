@@ -1,12 +1,32 @@
 {
-  "extName": { "message": "Toolkit for Udemy" },
-  "extDescription": { "message": "Unofficial Udemy toolkit: library tools, speed & hotkeys, dual subtitles, sentence loop, notes, PiP, capture, study stats." },
-  "cmdTogglePlay": { "message": "Play / pause (works from other tabs)" },
-  "cmdSeekBack": { "message": "Seek back" },
-  "cmdSeekForward": { "message": "Seek forward" },
-  "cmdScreenshot": { "message": "Capture the video frame (works with protected video)" },
-  "cmdSpeedUp": { "message": "Speed up" },
-  "cmdSpeedDown": { "message": "Speed down" },
-  "cmdNextLecture": { "message": "Next lecture" },
-  "cmdQuickNote": { "message": "Timestamped note" }
+  "extName": {
+    "message": "Toolkit for Udemy"
+  },
+  "extDescription": {
+    "message": "Dual subtitles, speed up to 16x, one-click transcript copy and bulk course cleanup for Udemy. Unofficial, free and open source."
+  },
+  "cmdTogglePlay": {
+    "message": "Play / pause (works from other tabs)"
+  },
+  "cmdSeekBack": {
+    "message": "Seek back"
+  },
+  "cmdSeekForward": {
+    "message": "Seek forward"
+  },
+  "cmdScreenshot": {
+    "message": "Capture the video frame (works with protected video)"
+  },
+  "cmdSpeedUp": {
+    "message": "Speed up"
+  },
+  "cmdSpeedDown": {
+    "message": "Speed down"
+  },
+  "cmdNextLecture": {
+    "message": "Next lecture"
+  },
+  "cmdQuickNote": {
+    "message": "Timestamped note"
+  }
 }

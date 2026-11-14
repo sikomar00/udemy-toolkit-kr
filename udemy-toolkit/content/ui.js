@@ -200,6 +200,7 @@
           { label: 'Leave a review', onClick: () => { window.open(UXK.LINKS.reviews, '_blank', 'noopener'); save({ done: true }); } },
           { label: 'Maybe later', onClick: () => save({ snoozeUntil: Date.now() + 30 * 864e5 }) },
           { label: "Don't ask again", onClick: () => save({ done: true }) },
+          ...(UXK.LINKS.support ? [{ label: 'Buy me a coffee', onClick: () => window.open(UXK.LINKS.support, '_blank', 'noopener') }] : []),
         ],
       });
       return true;

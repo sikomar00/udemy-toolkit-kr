@@ -4,7 +4,7 @@
 
 An unofficial Chrome extension (Manifest V3) that improves Udemy's My Learning page, the lecture player, and the search and course landing pages. Plain JavaScript, no build step.
 
-**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl)** · Report problems or suggest features in [GitHub Issues](https://github.com/sikomar00/udemy-toolkit-kr/issues).
+**[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl)** · Report problems or suggest features in [GitHub Issues](https://github.com/sikomar00/udemy-toolkit-kr/issues). If it helps you, you can [buy me a coffee](https://buymeacoffee.com/ys_doing1).
 
 > **Not affiliated with Udemy.** This is an independent tool. "Udemy" is a trademark of Udemy, Inc.
 
@@ -144,7 +144,7 @@ To update, overwrite the files in the same folder and click the reload icon on `
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 83 unit tests + 175 integration tests (149 English + 26 Korean)
+npm test            # 84 unit tests + 175 integration tests (149 English + 26 Korean)
 npm run shots       # screenshots of the mock pages → tests/shots/
 ```
 

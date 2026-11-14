@@ -291,6 +291,7 @@
     reviews: 'https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl/reviews',
     issues: 'https://github.com/sikomar00/udemy-toolkit-kr/issues',
     source: 'https://github.com/sikomar00/udemy-toolkit-kr',
+    support: 'https://buymeacoffee.com/ys_doing1', // Buy Me a Coffee. 비워 두면 후원 링크를 어디에도 보이지 않는다
   };
 
   // 평가를 물어도 되는 상태인가: 닫기(done)·미루기(snoozeUntil)를 존중하고, 한 번 물은 뒤 30일(askedAt)은 쉰다.

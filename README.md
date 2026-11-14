@@ -5,7 +5,7 @@
 Udemy 내 학습 페이지, 강의 플레이어, 검색·강의 소개 페이지를 강화하는 개인용 크롬 확장 프로그램(Manifest V3)입니다.
 빌드 과정이 없는 순수 JavaScript 구현입니다.
 
-**[Chrome 웹 스토어에서 설치하기](https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl)** · 문제나 제안은 [GitHub Issues](https://github.com/sikomar00/udemy-toolkit-kr/issues)에 남겨 주세요.
+**[Chrome 웹 스토어에서 설치하기](https://chromewebstore.google.com/detail/ckeooonobjmkdpdhijpphdhpploabmbl)** · 문제나 제안은 [GitHub Issues](https://github.com/sikomar00/udemy-toolkit-kr/issues)에 남겨 주세요. 도움이 됐다면 [커피 한 잔 후원](https://buymeacoffee.com/ys_doing1)도 큰 힘이 됩니다.
 
 ## 스크린샷
 
@@ -143,7 +143,7 @@ My Course Tools 패널, 대화상자, 알림, 팝업, 설정 화면은 키보드
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 단위 83개 + 통합 175개 (영어 149 + 한국어 26)
+npm test            # 단위 84개 + 통합 175개 (영어 149 + 한국어 26)
 npm run shots       # 화면 캡처 → tests/shots/
 ```
 

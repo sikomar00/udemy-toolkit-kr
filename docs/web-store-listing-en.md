@@ -4,41 +4,50 @@
 Toolkit for Udemy
 
 ## Short description (max 132 characters; same as manifest)
-Unofficial Udemy toolkit: library tools, speed & hotkeys, dual subtitles, sentence loop, notes, PiP, capture, study stats.
+Dual subtitles, speed up to 16x, one-click transcript copy and bulk course cleanup for Udemy. Unofficial, free and open source.
 
 ## Detailed description
-Toolkit for Udemy is an unofficial, independent tool. It is not affiliated with, endorsed by, or sponsored by Udemy, Inc. "Udemy" is a trademark of Udemy, Inc.
+Free, open-source (MIT) helper for learning on Udemy. Unofficial: not affiliated with, endorsed by, or sponsored by Udemy, Inc.
 
-**Player (lecture pages)**
-- Playback speed from 0.25x to 16x, remembered per course, with hotkeys (D / S / R, Z / X to seek, N / P for next / previous lecture).
-- A toolbar attached right below the video: Dual Subs, Loop, Copy Transcript, Note, Capture, PiP, Wide, Subtitles. One click to turn a feature on or off.
-- Dual subtitles: show two caption languages at once. If Udemy shows its captions in a band under the video, the extension replaces that band with an original + translation box; if the captions are inside the video, it hides them and shows the two lines over the video. Optional machine translation when a second language is not available.
-- Language-learning tools: replay or loop the current sentence, copy a sentence, and save sentences to a collection you can export for Anki.
-- Copy the whole lecture transcript to the clipboard in one click. Export subtitles as TXT, SRT or Markdown (also bilingual).
-- Timestamped notes (stored only in your browser), time left per section, mark a whole section complete, picture-in-picture, frame capture, optional dark mode.
-- Mark a whole curriculum section complete or incomplete with one click, and jump to the next or previous lecture with N / P.
-- Hotkeys for everything (D / S speed, Z / X seek, V dual subtitles, L loop, Q replay, Y copy, K save sentence, Alt+N note, Alt+S capture, Alt+P PiP, Alt+T wide view, H help). All keys can be changed, and Udemy's own keys keep working.
+Made for you if you:
+- run several Udemy extensions (speed, subtitles, course management) that keep clashing
+- want to see the original and the translated subtitles at the same time
+- scroll the whole transcript panel just to copy a lecture's transcript
+- find Udemy's 2x speed limit too slow
+- own hundreds of courses, and the page reloads every time you archive one
 
-**My Learning and search**
-- "My Course Tools" panel: sort and filter your courses (rating, reviews, students, duration, progress, last updated, purchase date, caption language), tags, a study queue, notes, bulk archive, and export to CSV or Markdown.
-- Shift+click a checkbox to select a whole range, a safe "select all" that tells you when matches are hidden, bulk archive with one-click Undo, and export only the selected courses.
-- The panel remembers your last tab, filters and sorting.
-- Badges on course cards and "Owned" labels in search results to avoid buying a course twice.
+**Dual subtitles (bilingual captions)**
+- Show two subtitle languages at once, for example English + Korean, Spanish, Japanese and more. Works when the course has captions in both languages, including Udemy's auto-translated captions. Optional machine translation fills the gap when a second language is missing (off by default).
+- Language-learning tools: replay or loop the current sentence (Q / L), copy it (Y), and save it with its translation and a link back to the moment (K). Export saved sentences as an Anki deck or CSV.
 
-**Popup, settings and backup**
-- Keyboard and screen-reader friendly: named dialogs, focus kept inside panels, announced notifications, and checked color contrast.
-- Available in English and Korean. It follows your browser language by default; choose a language in Settings → General.
-- The toolbar popup shows today's study time, the speed and time left of the current lecture, and quick switches (Dual subtitles, Hide owned courses, Toolbar below video, Dark mode).
-- Check Page Structure tells you if a Udemy page change broke a feature, and lets you copy a report.
-- Back up and restore settings, notes, saved sentences, tags, presets and stats as JSON.
+**Playback speed controller**
+- Speed from 0.25x to 16x, remembered per course and re-applied when Udemy resets it.
+- Hotkeys for everything: D / S speed, Z / X seek, N / P next or previous lecture, V dual subtitles, Alt+N note, Alt+S capture, Alt+P picture-in-picture, Alt+T wide view, H help. Every key can be changed, and Udemy's own keys keep working.
 
-**Study stats**
-- Daily watch time, goal and streak. Everything is stored locally.
+**Transcript, notes and capture**
+- Copy the whole lecture transcript in one click. Export subtitles as TXT, SRT or Markdown (also bilingual), or the whole course as one Markdown file.
+- Timestamped notes that link back to the exact second, exportable as Markdown. Frame capture, picture-in-picture, wide view.
+- Time left per section at your current speed, and mark a whole section complete in one click.
+
+**My Learning: organize hundreds of courses**
+- "My Course Tools" panel: sort and filter by rating, reviews, students, duration, progress, last updated, purchase date and caption language. Tags, a study queue and notes.
+- Archive without the page reloading. Select many courses (Shift+click for a range) and bulk archive with one-click Undo. Export the list to CSV (Notion) or Markdown.
+- "Owned" badges in search results so you never buy a course twice.
+
+**Study stats and settings**
+- Daily watch time, goal and streak in the toolbar popup.
+- English and Korean interface (follows your browser language). Keyboard and screen-reader friendly.
+- Back up and restore everything as JSON.
 
 **Privacy**
-- No account, no analytics, no developer server. Your notes, sentences, tags and stats stay in your browser.
-- Settings (hotkeys and options) may sync through your Chrome account.
-- If you turn on machine translation, the subtitle sentences being translated are sent to Google Translate. This is off by default and asks for permission first.
+- No account, no ads, no analytics, no developer server. Notes, sentences, tags and stats stay in your browser.
+- Settings may sync through your Chrome account. Subtitle sentences are sent to Google Translate only if you turn on machine translation.
+
+Source code (MIT): https://github.com/sikomar00/udemy-toolkit-kr
+Bug reports and ideas: https://github.com/sikomar00/udemy-toolkit-kr/issues
+If it saves you time, you can buy me a coffee: https://buymeacoffee.com/ys_doing1
+
+"Udemy" is a trademark of Udemy, Inc.
 
 ## Single purpose
 Make studying on Udemy easier: course library tools, lecture playback tools and study tracking, all on udemy.com.
