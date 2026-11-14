@@ -19,7 +19,9 @@
     const cues = primary.cues;
     if (!cues.length) throw new Error('The subtitle file is empty');
     const label = primary.cap.video_label || P.locOf(primary.cap);
-    P.indicator((await UXK.copyText(UXK.vtt.toText(cues))) ? `Transcript copied (${label} · ${cues.length} sentences)` : 'Copy failed');
+    const copied = await UXK.copyText(UXK.vtt.toText(cues));
+    P.indicator(copied ? `Transcript copied (${label} · ${cues.length} sentences)` : 'Copy failed');
+    if (copied) UXK.ui.askReview('transcript');
   }
 
   // 자막 메뉴: 언어 선택, 켜기/끄기, 내보내기

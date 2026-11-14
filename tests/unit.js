@@ -235,6 +235,9 @@ for (const [label, dir, files] of SPLITS) {
   check('평가 요청: 하루에 몰아 본 사람(3일 미만)에게는 안 보임', !U.reviewDue({ days: { a: hrs(5), b: hrs(5) } }, {}, NOW));
   check('평가 요청: 3시간 이상, 3일 이상 쓴 사람에게 보임', U.reviewDue(heavy, {}, NOW) && U.reviewDue(heavy, null, NOW));
   check('평가 요청: 닫기(done)·미루기(snoozeUntil)를 존중, 미룬 기간이 지나면 다시', !U.reviewDue(heavy, { done: true }, NOW) && !U.reviewDue(heavy, { snoozeUntil: NOW + 1 }, NOW) && U.reviewDue(heavy, { snoozeUntil: NOW - 1 }, NOW));
+  check('평가 요청: 최근에 물었으면(askedAt 30일) 카드도 쉼', !U.reviewDue(heavy, { askedAt: NOW - 864e5 }, NOW) && U.reviewDue(heavy, { askedAt: NOW - 31 * 864e5 }, NOW));
+  check('만족한 순간: 문턱(일괄 5개·대본 복사 3번째·문장 10개)을 넘을 때만', !U.reviewMomentDue({}, 'bulk', 4, NOW) && U.reviewMomentDue({}, 'bulk', 5, NOW) && !U.reviewMomentDue({}, 'transcript', 2, NOW) && U.reviewMomentDue(null, 'transcript', 3, NOW) && U.reviewMomentDue({}, 'sentences', 10, NOW) && !U.reviewMomentDue({}, 'unknown', 99, NOW));
+  check('만족한 순간: 닫기·미루기·최근 요청(30일)을 존중', !U.reviewMomentDue({ done: true }, 'bulk', 9, NOW) && !U.reviewMomentDue({ snoozeUntil: NOW + 1 }, 'bulk', 9, NOW) && !U.reviewMomentDue({ askedAt: NOW - 864e5 }, 'bulk', 9, NOW) && U.reviewMomentDue({ askedAt: NOW - 31 * 864e5 }, 'bulk', 9, NOW));
   check('평가 요청: 링크가 웹 스토어 상세·평가 페이지와 GitHub Issues', U.LINKS.store.startsWith('https://chromewebstore.google.com/detail/') && U.LINKS.reviews === U.LINKS.store + '/reviews' && U.LINKS.issues.endsWith('/issues') && !/utm_|\?/.test(U.LINKS.store));
   // 사전 점검: ko.js를 따로 읽어 틀 자리표시자({0}…)와 앞뒤 공백·줄바꿈이 영어와 한국어에서 같은지 본다
   const added = [];

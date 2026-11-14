@@ -400,6 +400,20 @@ async function playerTests(page, mock, sw) {
   const clip = await page.evaluate(() => navigator.clipboard.readText());
   check('대본 버튼 → 강의 전체 자막이 클립보드에 복사', /^Transcript copied \(English \[Auto\] · 4 sentences\)$/.test(await page.$eval('.uxk-indicator', (n) => n.textContent)) && clip === 'Hello world Second sentence here Third sentence & more Long cue', JSON.stringify(clip));
 
+  // 만족한 순간 평가 요청: 대본 복사 3번째에 한 번 묻고, "다시 묻지 않기" 뒤로는 묻지 않음
+  await sw.evaluate(async () => chrome.storage.local.set({ uxk_feedback: { transcriptCount: 2 } }));
+  await page.click('.uxk-toolbar button:text("Copy Transcript")', { force: true });
+  const askedOk = await waitToast(page, /Glad that helped/, 5000).then(() => true).catch(() => false);
+  const reviewToast = await page.evaluate(() => { const t = [...document.querySelectorAll('.uxk-toast')].find((n) => /Glad that helped/.test(n.textContent)); return t ? { role: t.getAttribute('role'), btns: [...t.querySelectorAll('.uxk-toast-btn')].map((b) => b.textContent) } : null; });
+  check('만족한 순간: 대본 복사 3번째에 평가 요청 알림 (평가·나중에·다시 묻지 않기, 읽어 주는 status)', askedOk && reviewToast && reviewToast.role === 'status' && reviewToast.btns.join('|') === 'Leave a review|Maybe later|Don\'t ask again', JSON.stringify(reviewToast));
+  await page.click('.uxk-toast-btn:text("Don\'t ask again")');
+  await sleep(300);
+  await page.click('.uxk-toolbar button:text("Copy Transcript")', { force: true });
+  await sleep(1200);
+  const fbAfter = await sw.evaluate(async () => (await chrome.storage.local.get('uxk_feedback')).uxk_feedback);
+  check('만족한 순간: "다시 묻지 않기" 뒤로는 묻지 않음', fbAfter && fbAfter.done === true && !!fbAfter.askedAt && !(await toastText(page)).includes('Glad that helped'), JSON.stringify(fbAfter));
+  await sw.evaluate(async () => chrome.storage.local.remove('uxk_feedback'));
+
   // 메모
   await page.keyboard.press('Alt+n');
   await page.waitForSelector('.uxk-modal textarea');
@@ -601,7 +615,7 @@ async function optionsTests(context, sw, extId) {
   await pop.emulateMedia({ colorScheme: null });
   await stubTabs();
   await pop.click('#review-issue');
-  check('평가 요청: "문제 제보"는 GitHub Issues를 열고 카드는 그대로', (await opened()).join() === 'https://github.com/sikomar00/udemy-toolkit-kr/issues' && !(await pop.$eval('#review', (n) => n.hidden)) && !(await fbOf()), (await opened()).join());
+  check('평가 요청: "문제 제보"는 GitHub Issues를 열고 카드는 그대로', (await opened()).join() === 'https://github.com/sikomar00/udemy-toolkit-kr/issues' && !(await pop.$eval('#review', (n) => n.hidden)) && await fbOf().then((f) => !(f && (f.done || f.snoozeUntil))), (await opened()).join());
   await pop.click('#review-later');
   const later = await fbOf();
   await pop.reload();

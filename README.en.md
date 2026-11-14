@@ -144,7 +144,7 @@ To update, overwrite the files in the same folder and click the reload icon on `
 cd tests
 npm install
 npx playwright install chromium
-npm test            # 80 unit tests + 170 integration tests (144 English + 26 Korean)
+npm test            # 83 unit tests + 175 integration tests (149 English + 26 Korean)
 npm run shots       # screenshots of the mock pages → tests/shots/
 ```
 

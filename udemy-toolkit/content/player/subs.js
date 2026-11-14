@@ -261,6 +261,7 @@
       return arr;
     }, []);
     P.indicator(`Sentence saved (${list.length} total)`);
+    UXK.ui.askReview('sentences', list.length);
   }
 
   Object.assign(P, { subs, locOf, choosePrimary, fetchCaption, applyNativeCc, resetSubs, staleError,
