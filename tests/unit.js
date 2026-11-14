@@ -227,6 +227,15 @@ for (const [label, dir, files] of SPLITS) {
   check('번역: 영어로 되돌리면 시간·숫자 표기도 영어', U.t('Close') === 'Close' && U.fmtDur(1500) === '25m' && U.fmtCompact(22100) === '22.1K');
   I.setLang('auto');
   check('번역: auto는 브라우저 언어를 따르고 모르면 영어', I.lang() === 'en');
+  // 평가 요청 카드: 충분히 써 본 사람에게만, 닫기·미루기를 존중
+  const hrs = (n) => ({ sec: n * 3600 });
+  const heavy = { days: { a: hrs(1), b: hrs(1), c: hrs(1.1) } };
+  const NOW = 1e12;
+  check('평가 요청: 처음 쓰는 사람·기록 없음에는 안 보임', !U.reviewDue({ days: {} }, {}, NOW) && !U.reviewDue(null, null, NOW) && !U.reviewDue({ days: { a: hrs(1) } }, {}, NOW));
+  check('평가 요청: 하루에 몰아 본 사람(3일 미만)에게는 안 보임', !U.reviewDue({ days: { a: hrs(5), b: hrs(5) } }, {}, NOW));
+  check('평가 요청: 3시간 이상, 3일 이상 쓴 사람에게 보임', U.reviewDue(heavy, {}, NOW) && U.reviewDue(heavy, null, NOW));
+  check('평가 요청: 닫기(done)·미루기(snoozeUntil)를 존중, 미룬 기간이 지나면 다시', !U.reviewDue(heavy, { done: true }, NOW) && !U.reviewDue(heavy, { snoozeUntil: NOW + 1 }, NOW) && U.reviewDue(heavy, { snoozeUntil: NOW - 1 }, NOW));
+  check('평가 요청: 링크가 웹 스토어 상세·평가 페이지와 GitHub Issues', U.LINKS.store.startsWith('https://chromewebstore.google.com/detail/') && U.LINKS.reviews === U.LINKS.store + '/reviews' && U.LINKS.issues.endsWith('/issues') && !/utm_|\?/.test(U.LINKS.store));
   // 사전 점검: ko.js를 따로 읽어 틀 자리표시자({0}…)와 앞뒤 공백·줄바꿈이 영어와 한국어에서 같은지 본다
   const added = [];
   const kctx = { globalThis: null, UXK: { i18n: { add: (l, e) => added.push(e) } } };
