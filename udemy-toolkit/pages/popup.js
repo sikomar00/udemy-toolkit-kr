@@ -20,7 +20,10 @@
   const secOf = (k) => (st.days && st.days[k] ? st.days[k].sec : 0);
   const today = secOf(dayKey(0));
   $('#today-txt').textContent = UXK.t('{0} min', Math.round(today / 60)) + (goal ? UXK.t(' / goal {0} min', S.stats.dailyGoalMin) : '');
-  $('#today-bar').style.width = `${goal ? Math.min(100, (today / goal) * 100) : today ? 100 : 0}%`;
+  const pct = Math.round(goal ? Math.min(100, (today / goal) * 100) : today ? 100 : 0);
+  $('#today-bar').style.width = `${pct}%`;
+  $('#today-meter').setAttribute('aria-valuenow', String(pct));
+  $('#today-meter').setAttribute('aria-valuetext', $('#today-txt').textContent);
   const meets = (k) => (goal ? secOf(k) >= goal : secOf(k) >= 60);
   let streak = 0, i = meets(dayKey(0)) ? 0 : 1;
   while (i < 3650 && meets(dayKey(i))) { streak++; i++; } // 잘못된 목표값이 와도 끝나도록 10년 상한

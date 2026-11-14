@@ -216,8 +216,8 @@
       <td class="uxk-n"><span class="uxk-bar" aria-hidden="true"><i data-w="${prog}"></i></span>${prog}%</td>
       <td class="uxk-n">${esc(c.enrolled || '-')}</td>
       <td class="uxk-n">${esc(c.accessed || '-')}</td>
-      <td class="uxk-c"><button class="uxk-icon ${m.queue ? 'uxk-on' : ''}" data-row="queue" aria-pressed="${m.queue ? 'true' : 'false'}" aria-label="${UXK.t('Study queue: {0}', esc(c.title))}" title="${UXK.t('Add to / remove from queue')}">${m.queue ? '★' : '☆'}</button>
-        <button class="uxk-icon" data-row="edit" aria-label="${UXK.t('Edit tags and notes: {0}', esc(c.title))}" title="${UXK.t('Edit tags & notes')}">✎</button></td>
+      <td class="uxk-c"><button class="uxk-icon ${m.queue ? 'uxk-on' : ''}" data-row="queue" aria-pressed="${m.queue ? 'true' : 'false'}" aria-label="${UXK.t('Study queue: {0}', esc(c.title))}" title="${UXK.t('Add to / remove from queue')}">${UXK.ui.icon('star', !!m.queue)}</button>
+        <button class="uxk-icon" data-row="edit" aria-label="${UXK.t('Edit tags and notes: {0}', esc(c.title))}" title="${UXK.t('Edit tags & notes')}">${UXK.ui.icon('pencil')}</button></td>
     </tr>`;
   }
 

@@ -130,6 +130,19 @@ async function libraryTests(page, mock) {
   check('탭 단추에 선택 상태(aria-pressed), 상태 줄은 role=status', a11y.scope.join() === 'true,false,false' && a11y.status === 'status', a11y.scope.join());
   check('체크박스·큐·편집 단추에 강의 제목이 들어간 이름', /^Select /.test(a11y.rowLabel) && a11y.allLabel === 'Select all shown courses' && /^Study queue: /.test(a11y.queueLabel) && /^Edit tags and notes: /.test(a11y.editLabel) && a11y.queue === 'false' && a11y.table === 'Your courses', JSON.stringify([a11y.rowLabel, a11y.queueLabel, a11y.editLabel]));
   check('이름 없는 단추·입력칸이 패널에 없음', a11y.unnamed.length === 0, a11y.unnamed.join(' | '));
+  // UI/UX 점검(ui-ux-pro-max 기준): 12px 미만 글자 없음, 줄의 단추 28px·체크박스 18px 이상(간격 포함 24px), 아이콘은 글자 기호가 아닌 SVG
+  const ux = await page.evaluate(() => {
+    const p = document.getElementById('uxk-lib');
+    const tiny = [...p.querySelectorAll('*')].filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.nodeValue.trim()) && e.getClientRects().length && !e.closest('[aria-hidden="true"]') && parseFloat(getComputedStyle(e).fontSize) < 12).map((e) => e.className + ' ' + getComputedStyle(e).fontSize);
+    const rows = [...p.querySelectorAll('tbody tr')].slice(0, 5);
+    const size = (sel) => rows.map((r) => r.querySelector(sel).getBoundingClientRect()).map((b) => Math.min(b.width, b.height));
+    return { tiny: [...new Set(tiny)], icon: Math.min(...size('[data-row="queue"]'), ...size('[data-row="edit"]')), box: Math.min(...size('.uxk-sel')), glyph: rows.some((r) => /[☆★✎]/.test(r.textContent)), svg: rows.every((r) => r.querySelector('[data-row="queue"] svg[aria-hidden="true"]')) };
+  });
+  check('패널: 12px 미만 글자 없음, 아이콘 단추 28px·체크박스 18px 이상, 아이콘은 SVG', ux.tiny.length === 0 && ux.icon >= 28 && ux.box >= 18 && !ux.glyph && ux.svg, JSON.stringify(ux));
+  await page.setViewportSize({ width: 800, height: 900 });
+  const narrow = await page.evaluate(() => { const l = document.querySelector('.uxk-lib-list'); const t = document.querySelector('.uxk-lib-list td.uxk-title'); return { listScroll: l.scrollWidth > l.clientWidth, titleW: Math.round(t.getBoundingClientRect().width) }; });
+  check('좁은 창(800px): 표는 패널 안에서 가로 스크롤, 제목 칸은 220px 이상', narrow.listScroll && narrow.titleW >= 220, JSON.stringify(narrow));
+  await page.setViewportSize({ width: 1400, height: 900 });
   // 정렬 머리글: 키보드(Enter)로 정렬하고 aria-sort가 바뀜
   await page.focus('th[data-k="reviews"]');
   await page.keyboard.press('Enter');
@@ -446,7 +459,7 @@ async function playerTests(page, mock, sw) {
   while (await page.$('.uxk-modal')) { await page.keyboard.press('Escape'); await sleep(100); }
 
   // 메모 드로어
-  await page.click('.uxk-toolbar button:text("⋯")', { force: true });
+  await page.click('.uxk-toolbar button[aria-label="More"]', { force: true });
   await page.click('.uxk-modal button:text("View / export my notes")');
   await page.waitForSelector('.uxk-drawer.uxk-open .uxk-note');
   check('메모 드로어에 메모 표시', (await page.$eval('.uxk-drawer .uxk-note-x', (n) => n.textContent)).includes('리스트 컴프리헨션'));
@@ -650,6 +663,8 @@ async function toolbarTests(page, mock, sw) {
   check('도구 막대는 영상 위가 아니라 영상 바로 아래에 붙고 항상 보임', g.mode === 'below' && !g.inLayer && g.gap >= -2 && g.gap <= 4 && g.height >= 24 && g.display !== 'none' && g.opacity === '1' && g.inViewport, JSON.stringify(g));
   const labels = await page.$$eval('.uxk-toolbar button', (bs) => bs.map((b) => b.textContent));
   check('도구 막대: 이중 자막·문장 반복 등이 있고 따라 말하기·A-B 반복은 없음', ['Dual Subs', 'Loop', 'Copy Transcript', 'Note', 'Capture', 'PiP', 'Wide', 'Subtitles'].every((l) => labels.includes(l)) && !labels.some((l) => /따라 말하기|A-B/.test(l)), labels.join('|'));
+  const glyphNames = await page.$$eval('.uxk-toolbar button', (n) => n.filter((b) => !/[\p{L}\p{N}]/u.test(b.textContent)).map((b) => b.getAttribute('aria-label') || ''));
+  check('도구 막대: 기호만 있는 단추(− + ⋯)도 이름이 있음 (화면 낭독기가 기호를 읽지 않게)', glyphNames.length === 3 && glyphNames.every((s) => /^(Slower|Faster|More)/.test(s)), glyphNames.join(' | '));
 
   // 기본 자막의 클래스 이름이 알려진 것인 화면: 이중 자막을 켜면 기본 자막이 숨겨진다
   await page.click('.uxk-toolbar button:text("Dual Subs")');
